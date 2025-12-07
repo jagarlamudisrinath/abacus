@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { generateTest, getTest, saveProgress, submitTest, getResponses } from '../services/test.service';
 import { GenerateTestRequest, SaveProgressRequest, SubmitTestRequest } from '../types';
 import { getAllPracticeSheets } from '../data/practiceSheets';
+import { optionalAuth } from '../middleware/auth.middleware';
+import { AuthenticatedRequest } from '../types/auth.types';
 
 const router = Router();
 
@@ -16,21 +18,20 @@ router.get('/practice-sheets', (req: Request, res: Response) => {
   }
 });
 
-// Generate a new test
-router.post('/generate', (req: Request<{}, {}, GenerateTestRequest>, res: Response) => {
+// Generate a new test (with optional auth to enable persistence)
+router.post('/generate', optionalAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { mode, practiceSheetId, candidateName } = req.body;
+    const { mode, practiceSheetId, candidateName } = req.body as GenerateTestRequest;
 
     if (!mode || !practiceSheetId || !candidateName) {
       res.status(400).json({ error: 'Missing required fields: mode, practiceSheetId, candidateName' });
       return;
     }
 
-    const test = generateTest({
-      mode,
-      practiceSheetId,
-      candidateName,
-    });
+    const test = await generateTest(
+      { mode, practiceSheetId, candidateName },
+      { studentId: req.student?.id }
+    );
 
     res.json({ test });
   } catch (error) {
@@ -79,12 +80,12 @@ router.post('/:testId/save', (req: Request<{ testId: string }, {}, SaveProgressR
 });
 
 // Submit completed test
-router.post('/:testId/submit', (req: Request<{ testId: string }, {}, SubmitTestRequest>, res: Response) => {
+router.post('/:testId/submit', async (req: Request<{ testId: string }, {}, SubmitTestRequest>, res: Response) => {
   try {
     const { testId } = req.params;
-    const { responses, timeTaken } = req.body;
+    const { responses, timeTaken, intervals } = req.body;
 
-    const result = submitTest(testId, responses, timeTaken);
+    const result = await submitTest(testId, responses, timeTaken, { intervals });
 
     if (!result) {
       res.status(404).json({ error: 'Test not found' });

@@ -1,0 +1,15 @@
+.score-chart {
+  min-height: 300px;
+}
+
+.score-chart.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  font-size: var(--font-base);
+}
+
+.recharts-legend-item-text {
+  color: var(--text-primary) !important;
+}

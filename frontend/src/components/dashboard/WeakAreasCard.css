@@ -1,0 +1,92 @@
+.weak-areas.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  color: var(--success);
+}
+
+.areas-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.area-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-secondary);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+}
+
+.area-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.area-name {
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.area-sessions {
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+}
+
+.area-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.area-score {
+  font-weight: var(--font-bold);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+}
+
+.area-score.good {
+  background: rgba(72, 187, 120, 0.15);
+  color: var(--success);
+}
+
+.area-score.average {
+  background: rgba(237, 137, 54, 0.15);
+  color: var(--warning);
+}
+
+.area-score.poor {
+  background: rgba(245, 101, 101, 0.15);
+  color: var(--error);
+}
+
+.trend-icon {
+  font-size: var(--font-lg);
+  font-weight: var(--font-bold);
+}
+
+.trend-icon.improving {
+  color: var(--success);
+}
+
+.trend-icon.declining {
+  color: var(--error);
+}
+
+.trend-icon.stable {
+  color: var(--text-secondary);
+}
+
+.weak-areas-tip {
+  margin: var(--spacing-md) 0 0;
+  padding: var(--spacing-sm);
+  background: rgba(66, 153, 225, 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--info);
+  font-size: var(--font-sm);
+  text-align: center;
+}

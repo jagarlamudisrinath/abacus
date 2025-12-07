@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useTest } from '../../contexts/TestContext';
 import QuestionDisplay from './QuestionDisplay';
 import ResponseInput from './ResponseInput';
@@ -17,6 +17,7 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
     dispatch,
     currentQuestion,
     setResponse,
+    startQuestion,
     nextQuestion,
     prevQuestion,
     goToQuestion,
@@ -87,6 +88,13 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
   }, [calculateStats, dispatch]);
 
   const current = currentQuestion();
+
+  // Track when user starts viewing a question
+  useEffect(() => {
+    if (current?.question?.id) {
+      startQuestion(current.question.id);
+    }
+  }, [current?.question?.id, startQuestion]);
 
   if (!state.test || !current) {
     return (

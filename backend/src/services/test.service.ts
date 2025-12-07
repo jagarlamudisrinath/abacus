@@ -1,12 +1,19 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Test, Section, TestMode, GenerateTestRequest, Response, TestResult, SectionResult, Question } from '../types';
 import { getPracticeSheetById } from '../data/practiceSheets';
+import * as sessionRepo from '../repositories/session.repository';
 
-// In-memory storage for tests (in production, use a database)
+// In-memory storage for tests (used as fallback for unauthenticated users)
 const testsStore: Map<string, Test> = new Map();
 const responsesStore: Map<string, Record<string, Response>> = new Map();
+// Map testId to database sessionId for authenticated users
+const testToSessionMap: Map<string, string> = new Map();
 
-export function generateTest(request: GenerateTestRequest): Test {
+export interface GenerateTestOptions {
+  studentId?: string; // If provided, creates a database session
+}
+
+export async function generateTest(request: GenerateTestRequest, options?: GenerateTestOptions): Promise<Test> {
   const testId = uuidv4();
 
   // Get the practice sheet by ID
@@ -51,9 +58,26 @@ export function generateTest(request: GenerateTestRequest): Test {
     status: 'not_started',
   };
 
-  // Store the test
+  // Store the test in memory
   testsStore.set(testId, test);
   responsesStore.set(testId, {});
+
+  // If authenticated, also create a database session
+  if (options?.studentId) {
+    try {
+      const sessionId = await sessionRepo.createSession(
+        options.studentId,
+        request.practiceSheetId,
+        practiceSheet.name,
+        request.mode,
+        questions.length
+      );
+      testToSessionMap.set(testId, sessionId);
+    } catch (error) {
+      console.error('Failed to create database session:', error);
+      // Continue without database persistence
+    }
+  }
 
   return test;
 }
@@ -95,11 +119,24 @@ export function saveProgress(
   return true;
 }
 
-export function submitTest(
+export interface SubmitTestOptions {
+  intervals?: Array<{
+    intervalNumber: number;
+    startTime: number;
+    endTime: number;
+    questionsAttempted: number;
+    correct: number;
+    incorrect: number;
+    avgTimePerQuestion: number;
+  }>;
+}
+
+export async function submitTest(
   testId: string,
   responses: Record<string, Response>,
-  timeTaken: number
-): TestResult | null {
+  timeTaken: number,
+  options?: SubmitTestOptions
+): Promise<TestResult | null> {
   const test = testsStore.get(testId);
   if (!test) return null;
 
@@ -157,7 +194,29 @@ export function submitTest(
     timeTaken,
     sectionResults,
     completedAt: new Date(),
+    intervals: options?.intervals,
   };
+
+  // Persist to database if this test has a session
+  const sessionId = testToSessionMap.get(testId);
+  if (sessionId) {
+    try {
+      // Collect all questions for database storage
+      const allQuestions = test.sections.flatMap((section) =>
+        section.questions.map((q) => ({
+          id: q.id,
+          questionNumber: q.questionNumber,
+          expression: q.expression,
+          correctAnswer: q.correctAnswer,
+        }))
+      );
+
+      await sessionRepo.completeSession(sessionId, result, responses, allQuestions);
+    } catch (error) {
+      console.error('Failed to persist session to database:', error);
+      // Continue returning result even if DB persistence fails
+    }
+  }
 
   return result;
 }

@@ -22,9 +22,37 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
+      - DATABASE_URL=postgresql://alama:${DB_PASSWORD:-alama123}@postgres:5432/alama_abacus
+      - JWT_SECRET=${JWT_SECRET:-your-jwt-secret-change-in-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - app-network
     restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=alama
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-alama123}
+      - POSTGRES_DB=alama_abacus
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/db/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alama -d alama_abacus"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
 
 networks:
   app-network:

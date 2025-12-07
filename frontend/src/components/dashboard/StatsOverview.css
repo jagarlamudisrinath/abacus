@@ -1,0 +1,93 @@
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+}
+
+.stat-card {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-icon.sessions {
+  background: rgba(66, 153, 225, 0.15);
+  color: var(--info);
+}
+
+.stat-icon.questions {
+  background: rgba(128, 90, 213, 0.15);
+  color: #805AD5;
+}
+
+.stat-icon.accuracy {
+  background: rgba(72, 187, 120, 0.15);
+  color: var(--success);
+}
+
+.stat-icon.best {
+  background: rgba(237, 137, 54, 0.15);
+  color: var(--warning);
+}
+
+.stat-icon.average {
+  background: rgba(236, 72, 153, 0.15);
+  color: #EC4899;
+}
+
+.stat-icon.time {
+  background: rgba(56, 178, 172, 0.15);
+  color: #38B2AC;
+}
+
+.stat-value {
+  font-size: var(--font-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+@media (max-width: 1200px) {
+  .stats-overview {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-card {
+    padding: var(--spacing-md);
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stat-value {
+    font-size: var(--font-xl);
+  }
+}

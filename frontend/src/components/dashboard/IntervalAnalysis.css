@@ -1,0 +1,20 @@
+.interval-analysis {
+  min-height: 250px;
+}
+
+.interval-analysis.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.interval-tip {
+  margin: var(--spacing-md) 0 0;
+  padding: var(--spacing-sm);
+  background: rgba(128, 90, 213, 0.1);
+  border-radius: var(--radius-sm);
+  color: #805AD5;
+  font-size: var(--font-sm);
+  text-align: center;
+}

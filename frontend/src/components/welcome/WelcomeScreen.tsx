@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useSettings } from '../../contexts/SettingsContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { TestMode, PracticeSheet } from '../../types';
 import { getPracticeSheets } from '../../services/api';
 import './WelcomeScreen.css';
 
 interface WelcomeScreenProps {
   onStartTest: (mode: TestMode, practiceSheetId: string) => void;
+  onShowDashboard: () => void;
+  onLogout: () => void;
 }
 
 // Fallback practice sheets in case API is not available
@@ -20,13 +22,15 @@ const FALLBACK_SHEETS: PracticeSheet[] = [
   { id: 'aa2-8', name: 'AA2 Practice Sheet 8', questionCount: 74 },
 ];
 
-export default function WelcomeScreen({ onStartTest }: WelcomeScreenProps) {
-  const { settings, updateSettings } = useSettings();
-  const [name, setName] = useState(settings.candidateName);
+export default function WelcomeScreen({ onStartTest, onShowDashboard, onLogout }: WelcomeScreenProps) {
+  const { student } = useAuth();
   const [selectedMode, setSelectedMode] = useState<TestMode>('practice');
   const [selectedSheet, setSelectedSheet] = useState('aa-2');
   const [practiceSheets, setPracticeSheets] = useState<PracticeSheet[]>(FALLBACK_SHEETS);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Use student name from profile
+  const studentName = student?.name || 'Student';
 
   useEffect(() => {
     async function loadSheets() {
@@ -44,15 +48,10 @@ export default function WelcomeScreen({ onStartTest }: WelcomeScreenProps) {
   }, []);
 
   const handleStart = () => {
-    if (!name.trim()) {
-      alert('Please enter your name');
-      return;
-    }
     if (!selectedSheet) {
       alert('Please select a practice sheet');
       return;
     }
-    updateSettings({ candidateName: name });
     onStartTest(selectedMode, selectedSheet);
   };
 
@@ -62,23 +61,22 @@ export default function WelcomeScreen({ onStartTest }: WelcomeScreenProps) {
     <div className="welcome-screen">
       <div className="welcome-card">
         <div className="welcome-header">
-          <div className="logo-large">ALAMA</div>
-          <h1>Welcome to Abacus Practice</h1>
+          <div className="header-top">
+            <div className="logo-large">ALAMA</div>
+            <div className="header-actions">
+              <button className="btn btn-secondary header-btn" onClick={onShowDashboard}>
+                My Progress
+              </button>
+              <button className="btn btn-outline header-btn" onClick={onLogout}>
+                Logout
+              </button>
+            </div>
+          </div>
+          <h1>Welcome, {studentName}!</h1>
           <p className="welcome-subtitle">Mental Math Training Platform</p>
         </div>
 
         <div className="welcome-form">
-          <div className="form-group">
-            <label htmlFor="name">Your Name</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your name"
-            />
-          </div>
-
           <div className="form-group">
             <label>Select Mode</label>
             <div className="mode-options">

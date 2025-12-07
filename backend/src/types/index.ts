@@ -40,12 +40,23 @@ export interface Response {
   userAnswer: string | null;
   isCorrect: boolean | null;
   answeredAt: Date | null;
+  timeSpent: number | null; // Time spent in seconds
 }
 
 export interface UserSettings {
   fontSize: 'small' | 'default' | 'large';
   theme: 'light' | 'dark' | 'system';
   candidateName: string;
+}
+
+export interface IntervalStats {
+  intervalNumber: number;
+  startTime: number;
+  endTime: number;
+  questionsAttempted: number;
+  correct: number;
+  incorrect: number;
+  avgTimePerQuestion: number;
 }
 
 export interface TestResult {
@@ -59,6 +70,7 @@ export interface TestResult {
   timeTaken: number;
   sectionResults: SectionResult[];
   completedAt: Date;
+  intervals?: IntervalStats[];
 }
 
 export interface SectionResult {
@@ -92,6 +104,7 @@ export interface SubmitTestRequest {
   testId: string;
   responses: Record<string, Response>;
   timeTaken: number;
+  intervals?: IntervalStats[];
 }
 
 export interface DifficultyConfig {

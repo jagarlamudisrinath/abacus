@@ -23,12 +23,38 @@
   border-bottom: 1px solid var(--border-light);
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.header-btn {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-sm);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+}
+
+.btn-outline:hover {
+  background: rgba(66, 153, 225, 0.1);
+}
+
 .logo-large {
   font-size: var(--font-4xl);
   font-weight: var(--font-bold);
   color: var(--primary-dark);
   letter-spacing: 4px;
-  margin-bottom: var(--spacing-md);
 }
 
 .welcome-header h1 {

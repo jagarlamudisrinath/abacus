@@ -45,7 +45,9 @@ export interface Response {
   questionId: string;
   userAnswer: string | null;
   isCorrect: boolean | null;
+  startedAt: Date | null;
   answeredAt: Date | null;
+  timeSpent: number | null; // Time spent in seconds
 }
 
 export interface UserSettings {
@@ -117,6 +119,7 @@ export type TestAction =
   | { type: 'PREV_QUESTION' }
   | { type: 'GO_TO_QUESTION'; payload: { sectionIndex: number; questionIndex: number } }
   | { type: 'SET_RESPONSE'; payload: { questionId: string; answer: string } }
+  | { type: 'START_QUESTION'; payload: string }
   | { type: 'TOGGLE_BOOKMARK'; payload: string }
   | { type: 'UPDATE_TIME'; payload: number }
   | { type: 'UPDATE_ELAPSED_TIME' }

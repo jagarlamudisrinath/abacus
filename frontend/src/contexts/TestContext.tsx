@@ -135,6 +135,12 @@ function testReducer(state: TestState, action: TestAction): TestState {
         }
       }
 
+      // Get existing response to preserve startedAt
+      const existingResponse = state.responses[questionId];
+      const startedAt = existingResponse?.startedAt || new Date();
+      const answeredAt = new Date();
+      const timeSpent = Math.round((answeredAt.getTime() - startedAt.getTime()) / 1000);
+
       return {
         ...state,
         responses: {
@@ -143,7 +149,33 @@ function testReducer(state: TestState, action: TestAction): TestState {
             questionId,
             userAnswer: answer,
             isCorrect,
-            answeredAt: new Date(),
+            startedAt,
+            answeredAt,
+            timeSpent,
+          },
+        },
+      };
+    }
+
+    case 'START_QUESTION': {
+      const questionId = action.payload;
+
+      // Only set startedAt if not already started
+      if (state.responses[questionId]?.startedAt) {
+        return state;
+      }
+
+      return {
+        ...state,
+        responses: {
+          ...state.responses,
+          [questionId]: {
+            questionId,
+            userAnswer: state.responses[questionId]?.userAnswer || null,
+            isCorrect: state.responses[questionId]?.isCorrect || null,
+            startedAt: new Date(),
+            answeredAt: state.responses[questionId]?.answeredAt || null,
+            timeSpent: state.responses[questionId]?.timeSpent || null,
           },
         },
       };
@@ -225,6 +257,7 @@ interface TestContextType {
   dispatch: React.Dispatch<TestAction>;
   currentQuestion: () => { question: any; section: any } | null;
   setResponse: (questionId: string, answer: string) => void;
+  startQuestion: (questionId: string) => void;
   nextQuestion: () => void;
   prevQuestion: () => void;
   goToQuestion: (sectionIndex: number, questionIndex: number) => void;
@@ -252,6 +285,10 @@ export function TestProvider({ children }: { children: ReactNode }) {
 
   const setResponse = useCallback((questionId: string, answer: string) => {
     dispatch({ type: 'SET_RESPONSE', payload: { questionId, answer } });
+  }, []);
+
+  const startQuestion = useCallback((questionId: string) => {
+    dispatch({ type: 'START_QUESTION', payload: questionId });
   }, []);
 
   const nextQuestion = useCallback(() => {
@@ -324,6 +361,7 @@ export function TestProvider({ children }: { children: ReactNode }) {
         dispatch,
         currentQuestion,
         setResponse,
+        startQuestion,
         nextQuestion,
         prevQuestion,
         goToQuestion,

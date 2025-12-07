@@ -156,3 +156,18 @@ input:focus, textarea:focus {
   max-height: 90%;
   overflow: auto;
 }
+
+/* Loading screen */
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+}
+
+.loading-spinner {
+  color: white;
+  font-size: var(--font-xl);
+  font-weight: var(--font-medium);
+}

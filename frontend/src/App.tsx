@@ -1,25 +1,29 @@
 import React, { useState, useCallback } from 'react';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { TestProvider, useTest } from './contexts/TestContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import WelcomeScreen from './components/welcome/WelcomeScreen';
 import TestInterface from './components/test/TestInterface';
 import ResultsScreen from './components/results/ResultsScreen';
 import ReviewScreen from './components/review/ReviewScreen';
+import LoginScreen from './components/auth/LoginScreen';
+import Dashboard from './components/dashboard/Dashboard';
 import { TestMode, TestResult } from './types';
 import { generateTest, submitTest, saveProgress } from './services/api';
 import './styles/globals.css';
 
-type AppScreen = 'welcome' | 'test' | 'results' | 'review';
+type AppScreen = 'login' | 'welcome' | 'test' | 'results' | 'review' | 'dashboard';
 type ReviewFilter = 'wrong' | 'unanswered';
 
 function AppContent() {
-  const [screen, setScreen] = useState<AppScreen>('welcome');
+  const [screen, setScreen] = useState<AppScreen>('login');
   const [result, setResult] = useState<TestResult | null>(null);
   const [lastMode, setLastMode] = useState<TestMode>('practice');
   const [lastPracticeSheetId, setLastPracticeSheetId] = useState('aa-2');
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('wrong');
   const { state, dispatch } = useTest();
+  const { isAuthenticated, isLoading, logout } = useAuth();
 
   const handleStartTest = useCallback(
     async (mode: TestMode, practiceSheetId: string) => {
@@ -172,9 +176,24 @@ function AppContent() {
   }, [state.test, state.responses, state.currentSectionIndex, state.currentQuestionIndex, dispatch]);
 
   const handleSaveAndClose = useCallback(async () => {
-    await handleSave();
+    if (!state.test) {
+      setScreen('welcome');
+      return;
+    }
+
+    try {
+      const timeTaken = state.startTime
+        ? Math.floor((Date.now() - state.startTime.getTime()) / 1000)
+        : 0;
+
+      // Submit the test to properly complete the session and save all data including timeSpent
+      await submitTest(state.test.id, state.responses, timeTaken);
+    } catch (error) {
+      console.error('Failed to submit test on close:', error);
+    }
+
     setScreen('welcome');
-  }, [handleSave]);
+  }, [state.test, state.responses, state.startTime]);
 
   const handleRetry = useCallback(() => {
     handleStartTest(lastMode, lastPracticeSheetId);
@@ -194,8 +213,63 @@ function AppContent() {
     setScreen('results');
   }, []);
 
+  const handleLoginSuccess = useCallback(() => {
+    setScreen('welcome');
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    logout();
+    setScreen('login');
+  }, [logout]);
+
+  const handleShowDashboard = useCallback(() => {
+    setScreen('dashboard');
+  }, []);
+
+  const handleDashboardBack = useCallback(() => {
+    setScreen('welcome');
+  }, []);
+
+  // Show loading while checking auth state
+  if (isLoading) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner">Loading...</div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated && screen !== 'login') {
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  if (screen === 'login') {
+    if (isAuthenticated) {
+      // Already logged in, go to welcome
+      setScreen('welcome');
+      return null;
+    }
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  if (screen === 'dashboard') {
+    return (
+      <Dashboard
+        onStartPractice={() => setScreen('welcome')}
+        onBack={handleDashboardBack}
+      />
+    );
+  }
+
   if (screen === 'welcome') {
-    return <WelcomeScreen onStartTest={handleStartTest} />;
+    return (
+      <WelcomeScreen
+        onStartTest={handleStartTest}
+        onShowDashboard={handleShowDashboard}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   if (screen === 'review') {
@@ -215,11 +289,13 @@ function AppContent() {
 
 function App() {
   return (
-    <SettingsProvider>
-      <TestProvider>
-        <AppContent />
-      </TestProvider>
-    </SettingsProvider>
+    <AuthProvider>
+      <SettingsProvider>
+        <TestProvider>
+          <AppContent />
+        </TestProvider>
+      </SettingsProvider>
+    </AuthProvider>
   );
 }
 

@@ -2,6 +2,25 @@ import { Test, TestMode, Response, TestResult, PracticeSheet } from '../types';
 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
+function getAuthToken(): string | null {
+  return localStorage.getItem('authToken');
+}
+
+function getHeaders(includeAuth: boolean = true): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (includeAuth) {
+    const token = getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  return headers;
+}
+
 export async function getPracticeSheets(): Promise<PracticeSheet[]> {
   const response = await fetch(`${API_BASE}/test/practice-sheets`);
 
@@ -20,9 +39,7 @@ export async function generateTest(
 ): Promise<Test> {
   const response = await fetch(`${API_BASE}/test/generate`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getHeaders(),
     body: JSON.stringify({
       mode,
       practiceSheetId,
@@ -56,9 +73,7 @@ export async function saveProgress(
 ): Promise<{ success: boolean; savedAt: Date }> {
   const response = await fetch(`${API_BASE}/test/${testId}/save`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getHeaders(),
     body: JSON.stringify({
       testId,
       responses,
@@ -81,9 +96,7 @@ export async function submitTest(
 ): Promise<TestResult> {
   const response = await fetch(`${API_BASE}/test/${testId}/submit`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getHeaders(),
     body: JSON.stringify({
       testId,
       responses,
