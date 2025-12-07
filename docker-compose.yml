@@ -37,6 +37,7 @@ services:
       - POSTGRES_USER=alama
       - POSTGRES_PASSWORD=${DB_PASSWORD:-alama123}
       - POSTGRES_DB=alama_abacus
+      - INIT_USERS=${INIT_USERS:-}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/src/db/migrations:/docker-entrypoint-initdb.d
