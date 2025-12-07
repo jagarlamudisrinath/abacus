@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -e
 
 # Initialize users from INIT_USERS environment variable
@@ -12,37 +12,48 @@ fi
 
 echo "Initializing users from INIT_USERS environment variable..."
 
-IFS=',' read -ra USERS <<< "$INIT_USERS"
-for user in "${USERS[@]}"; do
-    # Split by colon to get identifier and name
-    IFS=':' read -r identifier name <<< "$user"
+# Save original IFS and set to comma for splitting
+OLD_IFS="$IFS"
+IFS=','
 
-    # Trim whitespace
-    identifier=$(echo "$identifier" | xargs)
-    name=$(echo "$name" | xargs)
+for user in $INIT_USERS; do
+    # Reset IFS for internal processing
+    IFS="$OLD_IFS"
+
+    # Split by colon to get identifier and name
+    identifier=$(echo "$user" | cut -d':' -f1 | xargs)
+    name=$(echo "$user" | cut -d':' -f2- | xargs)
 
     if [ -z "$identifier" ] || [ -z "$name" ]; then
         echo "Skipping invalid entry: $user"
+        IFS=','
         continue
     fi
 
-    if [[ "$identifier" == *"@"* ]]; then
-        # Email-based user
-        echo "Creating user with email: $identifier ($name)"
-        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-            INSERT INTO students (email, name)
-            VALUES ('$identifier', '$name')
-            ON CONFLICT (email) DO NOTHING;
+    # Check if identifier contains @ (email)
+    case "$identifier" in
+        *@*)
+            # Email-based user
+            echo "Creating user with email: $identifier ($name)"
+            psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<EOSQL
+INSERT INTO students (email, name)
+VALUES ('$identifier', '$name')
+ON CONFLICT (email) DO NOTHING;
 EOSQL
-    else
-        # Student ID-based user
-        echo "Creating user with student_id: $identifier ($name)"
-        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-            INSERT INTO students (student_id, name)
-            VALUES ('$identifier', '$name')
-            ON CONFLICT (student_id) DO NOTHING;
+            ;;
+        *)
+            # Student ID-based user
+            echo "Creating user with student_id: $identifier ($name)"
+            psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<EOSQL
+INSERT INTO students (student_id, name)
+VALUES ('$identifier', '$name')
+ON CONFLICT (student_id) DO NOTHING;
 EOSQL
-    fi
+            ;;
+    esac
+
+    IFS=','
 done
 
+IFS="$OLD_IFS"
 echo "User initialization complete!"
