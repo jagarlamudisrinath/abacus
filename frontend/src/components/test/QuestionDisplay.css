@@ -1,0 +1,79 @@
+.question-display {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-lg);
+  background-color: var(--bg-primary);
+  min-height: 400px;
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.question-number {
+  font-size: var(--font-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.bookmark-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 8px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--font-sm);
+}
+
+.bookmark-btn:hover:not(:disabled) {
+  border-color: var(--border-medium);
+  color: var(--text-primary);
+}
+
+.bookmark-btn.bookmarked {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: rgba(37, 99, 235, 0.05);
+}
+
+.bookmark-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bookmark-icon {
+  flex-shrink: 0;
+}
+
+.question-expression {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  font-size: var(--font-question);
+  font-weight: var(--font-normal);
+  color: var(--primary-dark);
+  letter-spacing: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  padding: var(--spacing-xl) 0;
+  margin-top: var(--spacing-lg);
+}
+
+@media (max-width: 768px) {
+  .question-display {
+    min-height: 300px;
+  }
+
+  .question-expression {
+    font-size: calc(var(--font-question) * 0.5);
+    padding: var(--spacing-lg);
+  }
+}

@@ -1,0 +1,54 @@
+.footer {
+  display: flex;
+  align-items: center;
+  height: var(--footer-height);
+  padding: 0 var(--spacing-md);
+  background-color: var(--bg-tertiary);
+  border-top: 1px solid var(--border-light);
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+}
+
+.footer-left {
+  margin-right: var(--spacing-md);
+}
+
+.wifi-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+}
+
+.wifi-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex: 1;
+  justify-content: center;
+}
+
+.help-text {
+  color: var(--text-secondary);
+}
+
+.contact-numbers {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.flag {
+  font-size: var(--font-sm);
+}

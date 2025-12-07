@@ -1,0 +1,9 @@
+*/node_modules
+*/.git
+*.md
+.DS_Store
+.claude
+.playwright-mcp
+*.png
+*.log
+.mcp.json

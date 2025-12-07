@@ -1,0 +1,117 @@
+:root {
+  /* Colors - Updated to match original Alama Abacus */
+  --primary-dark: #1a2744;
+  --primary: #2563eb;
+  --primary-light: #3b82f6;
+  --accent: #2563eb;
+
+  /* Text colors */
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-light: #9ca3af;
+  --text-inverse: #ffffff;
+
+  /* Background colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --bg-header: #1a2744;
+
+  /* Border colors */
+  --border-light: #e5e7eb;
+  --border-medium: #d1d5db;
+
+  /* Status colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: #3b82f6;
+
+  /* Button colors */
+  --btn-save: #e85a4f;
+  --btn-save-hover: #dc4a3f;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* Font sizes */
+  --font-xs: 12px;
+  --font-sm: 14px;
+  --font-base: 16px;
+  --font-lg: 18px;
+  --font-xl: 20px;
+  --font-2xl: 24px;
+  --font-3xl: 30px;
+  --font-4xl: 36px;
+  --font-question: 72px;
+
+  /* Font weights */
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+
+  /* Header height */
+  --header-height: 60px;
+  --footer-height: 40px;
+}
+
+/* Font size modifiers */
+[data-font-size="small"] {
+  --font-xs: 10px;
+  --font-sm: 12px;
+  --font-base: 14px;
+  --font-lg: 16px;
+  --font-xl: 18px;
+  --font-2xl: 20px;
+  --font-3xl: 26px;
+  --font-4xl: 32px;
+  --font-question: 56px;
+}
+
+[data-font-size="large"] {
+  --font-xs: 14px;
+  --font-sm: 16px;
+  --font-base: 18px;
+  --font-lg: 20px;
+  --font-xl: 22px;
+  --font-2xl: 28px;
+  --font-3xl: 36px;
+  --font-4xl: 42px;
+  --font-question: 88px;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --text-primary: #f9fafb;
+  --text-secondary: #e5e7eb;
+  --text-light: #9ca3af;
+
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
+  --bg-header: #0f172a;
+
+  --border-light: #374151;
+  --border-medium: #4b5563;
+}
