@@ -5,17 +5,20 @@ import MainLayout from './components/layout/MainLayout';
 import WelcomeScreen from './components/welcome/WelcomeScreen';
 import TestInterface from './components/test/TestInterface';
 import ResultsScreen from './components/results/ResultsScreen';
+import ReviewScreen from './components/review/ReviewScreen';
 import { TestMode, TestResult } from './types';
 import { generateTest, submitTest, saveProgress } from './services/api';
 import './styles/globals.css';
 
-type AppScreen = 'welcome' | 'test' | 'results';
+type AppScreen = 'welcome' | 'test' | 'results' | 'review';
+type ReviewFilter = 'wrong' | 'unanswered';
 
 function AppContent() {
   const [screen, setScreen] = useState<AppScreen>('welcome');
   const [result, setResult] = useState<TestResult | null>(null);
   const [lastMode, setLastMode] = useState<TestMode>('practice');
   const [lastPracticeSheetId, setLastPracticeSheetId] = useState('aa-2');
+  const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('wrong');
   const { state, dispatch } = useTest();
 
   const handleStartTest = useCallback(
@@ -182,12 +185,25 @@ function AppContent() {
     setResult(null);
   }, []);
 
+  const handleReview = useCallback((filter: ReviewFilter) => {
+    setReviewFilter(filter);
+    setScreen('review');
+  }, []);
+
+  const handleBackToResults = useCallback(() => {
+    setScreen('results');
+  }, []);
+
   if (screen === 'welcome') {
     return <WelcomeScreen onStartTest={handleStartTest} />;
   }
 
+  if (screen === 'review') {
+    return <ReviewScreen filter={reviewFilter} onBack={handleBackToResults} />;
+  }
+
   if (screen === 'results' && result) {
-    return <ResultsScreen result={result} onRetry={handleRetry} onHome={handleHome} />;
+    return <ResultsScreen result={result} onRetry={handleRetry} onHome={handleHome} onReview={handleReview} />;
   }
 
   return (

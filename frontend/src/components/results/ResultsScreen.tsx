@@ -2,13 +2,16 @@ import React from 'react';
 import { TestResult, IntervalStats } from '../../types';
 import './ResultsScreen.css';
 
+type ReviewFilter = 'wrong' | 'unanswered';
+
 interface ResultsScreenProps {
   result: TestResult;
   onRetry: () => void;
   onHome: () => void;
+  onReview?: (filter: ReviewFilter) => void;
 }
 
-export default function ResultsScreen({ result, onRetry, onHome }: ResultsScreenProps) {
+export default function ResultsScreen({ result, onRetry, onHome, onReview }: ResultsScreenProps) {
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'excellent';
     if (score >= 60) return 'good';
@@ -141,6 +144,35 @@ export default function ResultsScreen({ result, onRetry, onHome }: ResultsScreen
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Review Actions */}
+        {onReview && (result.incorrect > 0 || result.unanswered > 0) && (
+          <div className="review-actions">
+            <h2>Review Questions</h2>
+            <div className="review-buttons">
+              {result.incorrect > 0 && (
+                <button
+                  className="btn btn-review wrong"
+                  onClick={() => onReview('wrong')}
+                >
+                  <span className="review-icon">✗</span>
+                  Review Wrong Questions
+                  <span className="review-count">{result.incorrect}</span>
+                </button>
+              )}
+              {result.unanswered > 0 && (
+                <button
+                  className="btn btn-review unanswered"
+                  onClick={() => onReview('unanswered')}
+                >
+                  <span className="review-icon">—</span>
+                  Review Unanswered
+                  <span className="review-count">{result.unanswered}</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
 
