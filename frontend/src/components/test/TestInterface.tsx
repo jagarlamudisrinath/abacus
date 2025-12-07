@@ -157,65 +157,69 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
         />
       )}
 
-      <QuestionNavigation
-        sections={state.test.sections}
-        currentSectionIndex={state.currentSectionIndex}
-        currentQuestionIndex={state.currentQuestionIndex}
-        responses={state.responses}
-        onQuestionClick={goToQuestion}
-        onSectionChange={handleSectionChange}
-        isTestMode={isTestMode}
-        onPrevQuestion={prevQuestion}
-        onNextQuestion={handleNext}
-        canGoPrev={canGoPrev}
-        canGoNext={canGoNext || isLastQuestion}
-      />
+      <div className="test-card-container">
+        <div className="test-card">
+          <QuestionNavigation
+            sections={state.test.sections}
+            currentSectionIndex={state.currentSectionIndex}
+            currentQuestionIndex={state.currentQuestionIndex}
+            responses={state.responses}
+            onQuestionClick={goToQuestion}
+            onSectionChange={handleSectionChange}
+            isTestMode={isTestMode}
+            onPrevQuestion={prevQuestion}
+            onNextQuestion={handleNext}
+            canGoPrev={canGoPrev}
+            canGoNext={canGoNext || isLastQuestion}
+          />
 
-      <div className="test-content">
-        {/* Left side navigation arrow */}
-        <button
-          className="side-nav-arrow left"
-          onClick={prevQuestion}
-          disabled={!canGoPrev}
-          title="Previous Question"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
+          <div className="test-content">
+            {/* Left side navigation arrow */}
+            <button
+              className="side-nav-arrow left"
+              onClick={prevQuestion}
+              disabled={!canGoPrev}
+              title="Previous Question"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
 
-        <QuestionDisplay
-          question={question}
-          section={section}
-          onBookmarkToggle={() => toggleBookmark(question.id)}
-          isTestMode={isTestMode}
-        />
+            <QuestionDisplay
+              question={question}
+              section={section}
+              onBookmarkToggle={() => toggleBookmark(question.id)}
+              isTestMode={isTestMode}
+            />
 
-        <ResponseInput
-          questionId={question.id}
-          currentAnswer={response?.userAnswer || null}
-          onAnswerChange={(answer) => {
-            setResponse(question.id, answer);
-            if (answer) setShowValidationError(false);
-          }}
-          onNext={handleNext}
-          onPrev={prevQuestion}
-          canGoNext={canGoNext || isLastQuestion}
-          canGoPrev={canGoPrev}
-          showValidationError={showValidationError}
-        />
+            <ResponseInput
+              questionId={question.id}
+              currentAnswer={response?.userAnswer || null}
+              onAnswerChange={(answer) => {
+                setResponse(question.id, answer);
+                if (answer) setShowValidationError(false);
+              }}
+              onNext={handleNext}
+              onPrev={prevQuestion}
+              canGoNext={canGoNext || isLastQuestion}
+              canGoPrev={canGoPrev}
+              showValidationError={showValidationError}
+            />
 
-        {/* Right side navigation arrow */}
-        <button
-          className="side-nav-arrow right"
-          onClick={handleNext}
-          disabled={!canGoNext && !isLastQuestion}
-          title="Next Question"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
+            {/* Right side navigation arrow */}
+            <button
+              className="side-nav-arrow right"
+              onClick={handleNext}
+              disabled={!canGoNext && !isLastQuestion}
+              title="Next Question"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* 7-Minute Interval Modal */}

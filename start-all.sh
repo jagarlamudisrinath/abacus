@@ -3,8 +3,8 @@
 # Start both frontend and backend servers
 echo "Starting Alama Abacus Application..."
 
-# Get the directory where this script is located
-SCRIPT_DIR="$(dirname "$0")"
+# Get the absolute directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Start backend in background
 echo "Starting Backend..."
