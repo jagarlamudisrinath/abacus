@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 
+export type UserRole = 'student' | 'teacher' | 'superuser';
+
 export interface Student {
   id: string;
   email: string | null;
   studentId: string | null;
   name: string;
+  role: UserRole;
+  teacherId: string | null;
   createdAt: Date;
   lastLoginAt: Date | null;
 }
@@ -12,8 +16,13 @@ export interface Student {
 interface AuthContextType {
   student: Student | null;
   isAuthenticated: boolean;
+  isTeacher: boolean;
+  isSuperuser: boolean;
+  isAdmin: boolean; // true for both teacher and superuser
   isLoading: boolean;
-  login: (identifier: string, name?: string) => Promise<{ isNewUser: boolean }>;
+  login: (identifier: string) => Promise<void>;
+  teacherLogin: (email: string, password: string) => Promise<void>;
+  teacherRegister: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   token: string | null;
 }
@@ -71,13 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = useCallback(async (identifier: string, name?: string): Promise<{ isNewUser: boolean }> => {
+  const login = useCallback(async (identifier: string): Promise<void> => {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ identifier, name }),
+      body: JSON.stringify({ identifier }),
     });
 
     if (!response.ok) {
@@ -89,8 +98,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('authToken', data.token);
     setToken(data.token);
     setStudent(data.student);
+  }, []);
 
-    return { isNewUser: data.isNewUser };
+  const teacherLogin = useCallback(async (email: string, password: string): Promise<void> => {
+    const response = await fetch(`${API_BASE}/auth/teacher/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Login failed');
+    }
+
+    const data = await response.json();
+    localStorage.setItem('authToken', data.token);
+    setToken(data.token);
+    setStudent(data.student);
+  }, []);
+
+  const teacherRegister = useCallback(async (email: string, password: string, name: string): Promise<void> => {
+    const response = await fetch(`${API_BASE}/auth/teacher/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password, name }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Registration failed');
+    }
+
+    const data = await response.json();
+    localStorage.setItem('authToken', data.token);
+    setToken(data.token);
+    setStudent(data.student);
   }, []);
 
   const logout = useCallback(() => {
@@ -104,8 +151,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         student,
         isAuthenticated: !!student,
+        isTeacher: student?.role === 'teacher',
+        isSuperuser: student?.role === 'superuser',
+        isAdmin: student?.role === 'teacher' || student?.role === 'superuser',
         isLoading,
         login,
+        teacherLogin,
+        teacherRegister,
         logout,
         token,
       }}

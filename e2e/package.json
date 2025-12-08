@@ -1,0 +1,23 @@
+{
+  "name": "alama-abacus-e2e",
+  "version": "1.0.0",
+  "description": "E2E tests and data generation for Alama Abacus",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "test:debug": "playwright test --debug",
+    "test:headed": "playwright test --headed",
+    "seed": "ts-node data-seeder/seeder.ts",
+    "seed:quick": "ts-node data-seeder/seeder.ts --sessions 1",
+    "lint": "eslint . --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.10.0",
+    "axios": "^1.6.2",
+    "typescript": "^5.3.2",
+    "yaml": "^2.3.4",
+    "ts-node": "^10.9.2"
+  }
+}

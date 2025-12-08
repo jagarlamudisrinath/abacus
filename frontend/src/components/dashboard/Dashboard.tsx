@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { fetchDashboard, DashboardData } from '../../services/progress.api';
+import { fetchDashboard, fetchActivity, DashboardData, ActivityDay } from '../../services/progress.api';
 import StatsOverview from './StatsOverview';
 import ScoreChart from './ScoreChart';
 import SessionHistory from './SessionHistory';
 import WeakAreasCard from './WeakAreasCard';
 import IntervalAnalysis from './IntervalAnalysis';
+import AchievementBadges from './AchievementBadges';
+import ActivityHeatmap from './ActivityHeatmap';
+import WeekComparison from './WeekComparison';
+import PaperAnalytics from './PaperAnalytics';
 import './Dashboard.css';
 
 interface DashboardProps {
@@ -16,6 +20,7 @@ interface DashboardProps {
 export default function Dashboard({ onStartPractice, onBack }: DashboardProps) {
   const { student, logout } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [activityData, setActivityData] = useState<ActivityDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,8 +32,12 @@ export default function Dashboard({ onStartPractice, onBack }: DashboardProps) {
     try {
       setIsLoading(true);
       setError(null);
-      const dashboardData = await fetchDashboard();
+      const [dashboardData, activityResult] = await Promise.all([
+        fetchDashboard(),
+        fetchActivity(84),
+      ]);
       setData(dashboardData);
+      setActivityData(activityResult.activity);
     } catch (err) {
       setError('Failed to load dashboard. Please try again.');
       console.error('Dashboard error:', err);
@@ -92,11 +101,6 @@ export default function Dashboard({ onStartPractice, onBack }: DashboardProps) {
           </div>
         </div>
         <div className="header-right">
-          <div className="streak-badge">
-            <span className="streak-icon">🔥</span>
-            <span className="streak-count">{data.streakDays}</span>
-            <span className="streak-label">day streak</span>
-          </div>
           <button className="btn btn-primary" onClick={onStartPractice}>
             Start Practice
           </button>
@@ -108,6 +112,13 @@ export default function Dashboard({ onStartPractice, onBack }: DashboardProps) {
 
       <main className="dashboard-content">
         <StatsOverview stats={data.stats} />
+
+        <AchievementBadges stats={data.stats} streakDays={data.streakDays} />
+
+        <div className="dashboard-grid">
+          <ActivityHeatmap activityData={activityData} streakDays={data.streakDays} />
+          <WeekComparison />
+        </div>
 
         <div className="dashboard-grid">
           <div className="chart-section">
@@ -135,6 +146,11 @@ export default function Dashboard({ onStartPractice, onBack }: DashboardProps) {
               <IntervalAnalysis data={data.intervalTrends} />
             </div>
           )}
+        </div>
+
+        <div className="paper-analytics-section">
+          <h2>Paper Analysis</h2>
+          <PaperAnalytics />
         </div>
 
         <div className="dashboard-footer">

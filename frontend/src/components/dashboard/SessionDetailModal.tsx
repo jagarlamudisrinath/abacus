@@ -49,6 +49,22 @@ export default function SessionDetailModal({ sessionId, onClose, onDelete }: Ses
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const formatIntervalTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatDuration = (startSeconds: number, endSeconds: number): string => {
+    const duration = endSeconds - startSeconds;
+    const mins = Math.floor(duration / 60);
+    const secs = Math.floor(duration % 60);
+    if (mins > 0) {
+      return `${mins}m ${secs}s`;
+    }
+    return `${secs}s`;
+  };
+
   const getScoreColor = (score: number): string => {
     if (score >= 80) return 'excellent';
     if (score >= 60) return 'good';
@@ -196,34 +212,68 @@ export default function SessionDetailModal({ sessionId, onClose, onDelete }: Ses
                   <span className="stat-value">{formatTime(session.timeTaken)}</span>
                   <span className="stat-label">Time</span>
                 </div>
+                <div className="stat-item">
+                  <span className="stat-value">
+                    {session.attempted > 0
+                      ? (session.timeTaken / session.attempted).toFixed(1)
+                      : '0'}s
+                  </span>
+                  <span className="stat-label">Avg/Question</span>
+                </div>
               </div>
             </div>
 
             {/* Interval Performance */}
             {session.intervals && session.intervals.length > 0 && (
               <div className="section">
-                <h4>Interval Performance</h4>
-                <div className="intervals-table">
-                  <div className="table-header">
-                    <span>Interval</span>
-                    <span>Questions</span>
-                    <span>Correct</span>
-                    <span>Accuracy</span>
-                    <span>Avg Time</span>
-                  </div>
-                  {session.intervals.map((interval) => (
-                    <div key={interval.intervalNumber} className="table-row">
-                      <span>#{interval.intervalNumber}</span>
-                      <span>{interval.questionsAttempted}</span>
-                      <span className="correct">{interval.correct}</span>
-                      <span>
-                        {interval.questionsAttempted > 0
-                          ? Math.round((interval.correct / interval.questionsAttempted) * 100)
-                          : 0}%
-                      </span>
-                      <span>{interval.avgTimePerQuestion.toFixed(1)}s</span>
-                    </div>
-                  ))}
+                <h4>7-Minute Session Breakdown ({session.intervals.length} intervals)</h4>
+                <div className="intervals-cards">
+                  {session.intervals.map((interval) => {
+                    const accuracy = interval.questionsAttempted > 0
+                      ? Math.round((interval.correct / interval.questionsAttempted) * 100)
+                      : 0;
+                    return (
+                      <div key={interval.intervalNumber} className="interval-card">
+                        <div className="interval-header">
+                          <span className="interval-title">Session #{interval.intervalNumber}</span>
+                          <span className="interval-duration">
+                            {formatDuration(interval.startTime, interval.endTime)}
+                          </span>
+                        </div>
+                        <div className="interval-time-range">
+                          <span className="time-label">Start:</span>
+                          <span className="time-value">{formatIntervalTime(interval.startTime)}</span>
+                          <span className="time-separator">-</span>
+                          <span className="time-label">End:</span>
+                          <span className="time-value">{formatIntervalTime(interval.endTime)}</span>
+                        </div>
+                        <div className="interval-stats">
+                          <div className="interval-stat">
+                            <span className="stat-number">{interval.questionsAttempted}</span>
+                            <span className="stat-desc">Questions</span>
+                          </div>
+                          <div className="interval-stat">
+                            <span className="stat-number correct">{interval.correct}</span>
+                            <span className="stat-desc">Correct</span>
+                          </div>
+                          <div className="interval-stat">
+                            <span className="stat-number incorrect">{interval.incorrect}</span>
+                            <span className="stat-desc">Wrong</span>
+                          </div>
+                          <div className="interval-stat">
+                            <span className={`stat-number ${accuracy >= 80 ? 'excellent' : accuracy >= 60 ? 'good' : accuracy >= 40 ? 'average' : 'poor'}`}>
+                              {accuracy}%
+                            </span>
+                            <span className="stat-desc">Accuracy</span>
+                          </div>
+                          <div className="interval-stat">
+                            <span className="stat-number">{interval.avgTimePerQuestion.toFixed(1)}s</span>
+                            <span className="stat-desc">Avg/Q</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -1,41 +1,91 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
 import * as studentRepo from '../repositories/student.repository';
-import { Student, LoginRequest, LoginResponse, JWTPayload } from '../types/auth.types';
+import { Student, LoginRequest, LoginResponse, JWTPayload, UserRole, TeacherLoginRequest, TeacherRegisterRequest } from '../types/auth.types';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-change-in-production';
 const JWT_EXPIRES_IN = '30d';
+const SALT_ROUNDS = 10;
 
 export async function loginOrRegister(request: LoginRequest): Promise<LoginResponse> {
-  const { identifier, name } = request;
+  const { identifier } = request;
 
   // Try to find existing student
-  let student = await studentRepo.findByIdentifier(identifier);
-  let isNewUser = false;
+  const student = await studentRepo.findByIdentifier(identifier);
 
   if (!student) {
-    // Create new student - name is required for new users
-    if (!name || name.trim() === '') {
-      throw new Error('Name is required for new users');
-    }
-    student = await studentRepo.create(identifier, name.trim());
-    isNewUser = true;
+    // Student self-signup is disabled - students can only be created by teachers or admins
+    throw new Error('Account not found. Please contact your teacher or administrator to create an account.');
   }
 
   // Update last login timestamp
   await studentRepo.updateLastLogin(student.id);
 
-  // Generate JWT token
-  const token = generateToken(student.id);
+  // Generate JWT token with role
+  const token = generateToken(student.id, student.role);
 
   return {
     token,
     student,
-    isNewUser,
+    isNewUser: false,
   };
 }
 
-export function generateToken(studentId: string): string {
-  const payload: JWTPayload = { studentId };
+export async function registerTeacher(request: TeacherRegisterRequest): Promise<LoginResponse> {
+  const { email, password, name } = request;
+
+  // Check if email already exists
+  const existing = await studentRepo.findByEmail(email);
+  if (existing) {
+    throw new Error('Email already registered');
+  }
+
+  // Hash password
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+  // Create teacher
+  const teacher = await studentRepo.createTeacher(email, name, passwordHash);
+
+  // Generate JWT token
+  const token = generateToken(teacher.id, 'teacher');
+
+  return {
+    token,
+    student: teacher,
+    isNewUser: true,
+  };
+}
+
+export async function loginTeacher(request: TeacherLoginRequest): Promise<LoginResponse> {
+  const { email, password } = request;
+
+  // Find teacher or superuser by email
+  const result = await studentRepo.findAdminByEmail(email);
+  if (!result) {
+    throw new Error('Invalid email or password');
+  }
+
+  // Verify password
+  const isValid = await bcrypt.compare(password, result.passwordHash);
+  if (!isValid) {
+    throw new Error('Invalid email or password');
+  }
+
+  // Update last login timestamp
+  await studentRepo.updateLastLogin(result.student.id);
+
+  // Generate JWT token with actual role from database
+  const token = generateToken(result.student.id, result.student.role);
+
+  return {
+    token,
+    student: result.student,
+    isNewUser: false,
+  };
+}
+
+export function generateToken(studentId: string, role: UserRole = 'student'): string {
+  const payload: JWTPayload = { studentId, role };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 

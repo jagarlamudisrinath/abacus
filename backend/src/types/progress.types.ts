@@ -37,6 +37,26 @@ export interface WeeklyActivity {
   questions: number;
 }
 
+export interface ActivityDay {
+  date: string;
+  sessions: number;
+  questions: number;
+}
+
+export interface WeekStats {
+  sessions: number;
+  questions: number;
+  correct: number;
+  accuracy: number;
+  timeSpent: number;
+  averageScore: number;
+}
+
+export interface ComparisonData {
+  thisWeek: WeekStats;
+  lastWeek: WeekStats;
+}
+
 export interface WeakAreaAnalysis {
   practiceSheetId: string;
   practiceSheetName: string;
@@ -89,4 +109,40 @@ export interface SessionDetail extends SessionSummary {
     isCorrect: boolean | null;
     timeSpent: number | null;
   }>;
+}
+
+// Paper Analytics types
+export interface PaperAnalytics {
+  practiceSheetId: string;
+  practiceSheetName: string;
+  totalSessions: number;
+  averageScore: number;
+  bestScore: number;
+  worstScore: number;
+  averageTimeTaken: number;
+  totalQuestionsAttempted: number;
+  overallAccuracy: number;
+  trend: 'improving' | 'declining' | 'stable';
+  sessions: PaperSessionSummary[];
+  scoreTrend: Array<{ date: string; score: number }>;
+}
+
+export interface PaperSessionSummary {
+  sessionId: string;
+  completedAt: string;
+  score: number;
+  correct: number;
+  incorrect: number;
+  unanswered: number;
+  totalQuestions: number;
+  timeTaken: number;
+  comparedToAverage: 'above' | 'below' | 'equal';
+}
+
+export interface AttemptedPaper {
+  practiceSheetId: string;
+  practiceSheetName: string;
+  sessionCount: number;
+  lastAttempted: string;
+  averageScore: number;
 }

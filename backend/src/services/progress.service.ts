@@ -9,6 +9,12 @@ import {
   IntervalTrendAnalysis,
   SessionSummary,
   SessionDetail,
+  ActivityDay,
+  WeekStats,
+  ComparisonData,
+  PaperAnalytics,
+  PaperSessionSummary,
+  AttemptedPaper,
 } from '../types/progress.types';
 
 export async function getDashboardData(studentId: string): Promise<DashboardData> {
@@ -291,4 +297,293 @@ export async function deleteSession(
   studentId: string
 ): Promise<boolean> {
   return sessionRepo.deleteSession(sessionId, studentId);
+}
+
+export async function getActivityByDay(studentId: string, days: number = 84): Promise<ActivityDay[]> {
+  const result = await query<{
+    date: Date;
+    sessions: string;
+    questions: string;
+  }>(
+    `WITH days AS (
+       SELECT generate_series(
+         DATE(NOW() - INTERVAL '${days - 1} days'),
+         DATE(NOW()),
+         '1 day'::interval
+       )::date as day
+     )
+     SELECT
+       d.day as date,
+       COUNT(s.id) as sessions,
+       COALESCE(SUM(s.attempted), 0) as questions
+     FROM days d
+     LEFT JOIN sessions s ON DATE(s.completed_at) = d.day
+       AND s.student_id = $1
+       AND s.status = 'completed'
+     GROUP BY d.day
+     ORDER BY d.day`,
+    [studentId]
+  );
+
+  return result.rows.map((row) => ({
+    date: row.date.toISOString().split('T')[0],
+    sessions: parseInt(row.sessions),
+    questions: parseInt(row.questions),
+  }));
+}
+
+export async function getWeekComparison(studentId: string): Promise<ComparisonData> {
+  const [thisWeekResult, lastWeekResult] = await Promise.all([
+    query<{
+      sessions: string;
+      questions: string;
+      correct: string;
+      time_spent: string;
+      avg_score: string;
+    }>(
+      `SELECT
+         COUNT(*) as sessions,
+         COALESCE(SUM(attempted), 0) as questions,
+         COALESCE(SUM(correct), 0) as correct,
+         COALESCE(SUM(time_taken), 0) as time_spent,
+         COALESCE(AVG(score), 0) as avg_score
+       FROM sessions
+       WHERE student_id = $1
+         AND status = 'completed'
+         AND completed_at >= DATE(NOW()) - INTERVAL '6 days'`,
+      [studentId]
+    ),
+    query<{
+      sessions: string;
+      questions: string;
+      correct: string;
+      time_spent: string;
+      avg_score: string;
+    }>(
+      `SELECT
+         COUNT(*) as sessions,
+         COALESCE(SUM(attempted), 0) as questions,
+         COALESCE(SUM(correct), 0) as correct,
+         COALESCE(SUM(time_taken), 0) as time_spent,
+         COALESCE(AVG(score), 0) as avg_score
+       FROM sessions
+       WHERE student_id = $1
+         AND status = 'completed'
+         AND completed_at >= DATE(NOW()) - INTERVAL '13 days'
+         AND completed_at < DATE(NOW()) - INTERVAL '6 days'`,
+      [studentId]
+    ),
+  ]);
+
+  const thisWeek = thisWeekResult.rows[0];
+  const lastWeek = lastWeekResult.rows[0];
+
+  const calculateAccuracy = (correct: number, questions: number): number => {
+    return questions > 0 ? (correct / questions) * 100 : 0;
+  };
+
+  return {
+    thisWeek: {
+      sessions: parseInt(thisWeek.sessions),
+      questions: parseInt(thisWeek.questions),
+      correct: parseInt(thisWeek.correct),
+      accuracy: calculateAccuracy(parseInt(thisWeek.correct), parseInt(thisWeek.questions)),
+      timeSpent: parseInt(thisWeek.time_spent),
+      averageScore: parseFloat(thisWeek.avg_score),
+    },
+    lastWeek: {
+      sessions: parseInt(lastWeek.sessions),
+      questions: parseInt(lastWeek.questions),
+      correct: parseInt(lastWeek.correct),
+      accuracy: calculateAccuracy(parseInt(lastWeek.correct), parseInt(lastWeek.questions)),
+      timeSpent: parseInt(lastWeek.time_spent),
+      averageScore: parseFloat(lastWeek.avg_score),
+    },
+  };
+}
+
+export async function getAttemptedPapers(studentId: string): Promise<AttemptedPaper[]> {
+  const result = await query<{
+    practice_sheet_id: string;
+    practice_sheet_name: string;
+    session_count: string;
+    last_attempted: Date;
+    average_score: string;
+  }>(
+    `SELECT
+       practice_sheet_id,
+       practice_sheet_name,
+       COUNT(*) as session_count,
+       MAX(completed_at) as last_attempted,
+       AVG(score) as average_score
+     FROM sessions
+     WHERE student_id = $1 AND status = 'completed'
+     GROUP BY practice_sheet_id, practice_sheet_name
+     ORDER BY last_attempted DESC`,
+    [studentId]
+  );
+
+  return result.rows.map((row) => ({
+    practiceSheetId: row.practice_sheet_id,
+    practiceSheetName: row.practice_sheet_name,
+    sessionCount: parseInt(row.session_count),
+    lastAttempted: row.last_attempted.toISOString(),
+    averageScore: parseFloat(row.average_score),
+  }));
+}
+
+export async function getPaperAnalytics(
+  studentId: string,
+  practiceSheetId: string,
+  dateRange: 'week' | 'month' | 'all' = 'all'
+): Promise<PaperAnalytics | null> {
+  // Build date filter clause
+  let dateFilter = '';
+  if (dateRange === 'week') {
+    dateFilter = "AND completed_at >= NOW() - INTERVAL '7 days'";
+  } else if (dateRange === 'month') {
+    dateFilter = "AND completed_at >= NOW() - INTERVAL '30 days'";
+  }
+
+  // Get aggregated stats
+  const statsResult = await query<{
+    practice_sheet_name: string;
+    total_sessions: string;
+    avg_score: string;
+    best_score: string;
+    worst_score: string;
+    avg_time: string;
+    total_attempted: string;
+    total_correct: string;
+  }>(
+    `SELECT
+       practice_sheet_name,
+       COUNT(*) as total_sessions,
+       AVG(score) as avg_score,
+       MAX(score) as best_score,
+       MIN(score) as worst_score,
+       AVG(time_taken) as avg_time,
+       SUM(attempted) as total_attempted,
+       SUM(correct) as total_correct
+     FROM sessions
+     WHERE student_id = $1
+       AND practice_sheet_id = $2
+       AND status = 'completed'
+       ${dateFilter}
+     GROUP BY practice_sheet_name`,
+    [studentId, practiceSheetId]
+  );
+
+  if (statsResult.rows.length === 0) {
+    return null;
+  }
+
+  const stats = statsResult.rows[0];
+  const avgScore = parseFloat(stats.avg_score);
+  const totalAttempted = parseInt(stats.total_attempted);
+  const totalCorrect = parseInt(stats.total_correct);
+
+  // Get session list
+  const sessionsResult = await query<{
+    id: string;
+    completed_at: Date;
+    score: string;
+    correct: string;
+    incorrect: string;
+    total_questions: string;
+    attempted: string;
+    time_taken: string;
+  }>(
+    `SELECT
+       id,
+       completed_at,
+       score,
+       correct,
+       incorrect,
+       total_questions,
+       attempted,
+       time_taken
+     FROM sessions
+     WHERE student_id = $1
+       AND practice_sheet_id = $2
+       AND status = 'completed'
+       ${dateFilter}
+     ORDER BY completed_at DESC`,
+    [studentId, practiceSheetId]
+  );
+
+  const sessions: PaperSessionSummary[] = sessionsResult.rows.map((row) => {
+    const sessionScore = parseFloat(row.score);
+    let comparedToAverage: 'above' | 'below' | 'equal' = 'equal';
+    if (sessionScore > avgScore + 1) {
+      comparedToAverage = 'above';
+    } else if (sessionScore < avgScore - 1) {
+      comparedToAverage = 'below';
+    }
+
+    return {
+      sessionId: row.id,
+      completedAt: row.completed_at.toISOString(),
+      score: sessionScore,
+      correct: parseInt(row.correct),
+      incorrect: parseInt(row.incorrect),
+      unanswered: parseInt(row.total_questions) - parseInt(row.attempted),
+      totalQuestions: parseInt(row.total_questions),
+      timeTaken: parseInt(row.time_taken),
+      comparedToAverage,
+    };
+  });
+
+  // Get score trend for chart
+  const trendResult = await query<{
+    date: Date;
+    score: string;
+  }>(
+    `SELECT DATE(completed_at) as date, AVG(score) as score
+     FROM sessions
+     WHERE student_id = $1
+       AND practice_sheet_id = $2
+       AND status = 'completed'
+       ${dateFilter}
+     GROUP BY DATE(completed_at)
+     ORDER BY date`,
+    [studentId, practiceSheetId]
+  );
+
+  const scoreTrend = trendResult.rows.map((row) => ({
+    date: row.date.toISOString().split('T')[0],
+    score: parseFloat(row.score),
+  }));
+
+  // Calculate trend (comparing recent vs older scores)
+  let trend: 'improving' | 'declining' | 'stable' = 'stable';
+  if (scoreTrend.length >= 2) {
+    const midpoint = Math.floor(scoreTrend.length / 2);
+    const recentScores = scoreTrend.slice(midpoint);
+    const olderScores = scoreTrend.slice(0, midpoint);
+
+    const recentAvg = recentScores.reduce((sum, s) => sum + s.score, 0) / recentScores.length;
+    const olderAvg = olderScores.reduce((sum, s) => sum + s.score, 0) / olderScores.length;
+
+    if (recentAvg > olderAvg + 5) {
+      trend = 'improving';
+    } else if (recentAvg < olderAvg - 5) {
+      trend = 'declining';
+    }
+  }
+
+  return {
+    practiceSheetId,
+    practiceSheetName: stats.practice_sheet_name,
+    totalSessions: parseInt(stats.total_sessions),
+    averageScore: avgScore,
+    bestScore: parseFloat(stats.best_score),
+    worstScore: parseFloat(stats.worst_score),
+    averageTimeTaken: parseFloat(stats.avg_time),
+    totalQuestionsAttempted: totalAttempted,
+    overallAccuracy: totalAttempted > 0 ? (totalCorrect / totalAttempted) * 100 : 0,
+    trend,
+    sessions,
+    scoreTrend,
+  };
 }

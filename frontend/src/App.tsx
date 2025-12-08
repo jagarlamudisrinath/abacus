@@ -9,11 +9,14 @@ import ResultsScreen from './components/results/ResultsScreen';
 import ReviewScreen from './components/review/ReviewScreen';
 import LoginScreen from './components/auth/LoginScreen';
 import Dashboard from './components/dashboard/Dashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
+import SuperuserDashboard from './components/admin/SuperuserDashboard';
+import TeacherLogin from './components/admin/TeacherLogin';
 import { TestMode, TestResult } from './types';
 import { generateTest, submitTest, saveProgress } from './services/api';
 import './styles/globals.css';
 
-type AppScreen = 'login' | 'welcome' | 'test' | 'results' | 'review' | 'dashboard';
+type AppScreen = 'login' | 'welcome' | 'test' | 'results' | 'review' | 'dashboard' | 'admin';
 type ReviewFilter = 'wrong' | 'unanswered';
 
 function AppContent() {
@@ -23,7 +26,7 @@ function AppContent() {
   const [lastPracticeSheetId, setLastPracticeSheetId] = useState('aa-2');
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('wrong');
   const { state, dispatch } = useTest();
-  const { isAuthenticated, isLoading, logout } = useAuth();
+  const { isAuthenticated, isTeacher, isSuperuser, isLoading, logout } = useAuth();
 
   const handleStartTest = useCallback(
     async (mode: TestMode, practiceSheetId: string) => {
@@ -51,10 +54,13 @@ function AppContent() {
         ? Math.floor((Date.now() - state.startTime.getTime()) / 1000)
         : 0;
 
-      const testResult = await submitTest(state.test.id, state.responses, timeTaken);
-
-      // Always include intervals from local state (API doesn't track these)
+      // Calculate intervals BEFORE submitting so we can send them to backend
       const localResult = calculateLocalResults();
+
+      // Pass intervals to submitTest so they're stored in the database
+      const testResult = await submitTest(state.test.id, state.responses, timeTaken, localResult.intervals);
+
+      // Merge with local intervals (use local as source of truth for display)
       setResult({ ...testResult, intervals: localResult.intervals });
       setScreen('results');
     } catch (error) {
@@ -186,14 +192,17 @@ function AppContent() {
         ? Math.floor((Date.now() - state.startTime.getTime()) / 1000)
         : 0;
 
-      // Submit the test to properly complete the session and save all data including timeSpent
-      await submitTest(state.test.id, state.responses, timeTaken);
+      // Calculate and send intervals when saving and closing
+      const localResult = calculateLocalResults();
+
+      // Submit the test to properly complete the session and save all data including timeSpent and intervals
+      await submitTest(state.test.id, state.responses, timeTaken, localResult.intervals);
     } catch (error) {
       console.error('Failed to submit test on close:', error);
     }
 
     setScreen('welcome');
-  }, [state.test, state.responses, state.startTime]);
+  }, [state.test, state.responses, state.startTime, state.intervals, state.elapsedTime, state.questionsAtIntervalStart, state.correctAtIntervalStart, state.incorrectAtIntervalStart, state.currentIntervalStart]);
 
   const handleRetry = useCallback(() => {
     handleStartTest(lastMode, lastPracticeSheetId);
@@ -230,6 +239,38 @@ function AppContent() {
     setScreen('welcome');
   }, []);
 
+  const handleShowAdmin = useCallback(() => {
+    setScreen('admin');
+  }, []);
+
+  const handleAdminBack = useCallback(() => {
+    logout();
+    setScreen('login');
+  }, [logout]);
+
+  const handleTeacherLoginSuccess = useCallback(() => {
+    // After teacher logs in, stay on admin screen (will show AdminDashboard)
+  }, []);
+
+  // Admin screen handling
+  if (screen === 'admin') {
+    // If not authenticated as teacher or superuser, show TeacherLogin
+    if (!isTeacher && !isSuperuser) {
+      return (
+        <TeacherLogin
+          onLoginSuccess={handleTeacherLoginSuccess}
+          onBack={() => setScreen('login')}
+        />
+      );
+    }
+    // Superuser sees SuperuserDashboard
+    if (isSuperuser) {
+      return <SuperuserDashboard onLogout={handleAdminBack} />;
+    }
+    // Regular teacher sees AdminDashboard
+    return <AdminDashboard onBack={handleAdminBack} />;
+  }
+
   // Show loading while checking auth state
   if (isLoading) {
     return (
@@ -241,7 +282,7 @@ function AppContent() {
 
   // Redirect to login if not authenticated
   if (!isAuthenticated && screen !== 'login') {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} onShowAdmin={handleShowAdmin} />;
   }
 
   if (screen === 'login') {
@@ -250,7 +291,7 @@ function AppContent() {
       setScreen('welcome');
       return null;
     }
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} onShowAdmin={handleShowAdmin} />;
   }
 
   if (screen === 'dashboard') {

@@ -13,11 +13,18 @@
   align-items: center;
 }
 
-.question-number {
-  font-size: var(--font-sm);
-  font-weight: var(--font-medium);
-  color: var(--text-primary);
-  margin: 0;
+.question-display .question-number {
+  font-size: var(--font-sm) !important;
+  font-weight: var(--font-medium) !important;
+  color: var(--text-primary) !important;
+  margin: 0 !important;
+  /* Explicitly reset any badge/circle styles from PracticeSheetEditor */
+  background: none !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  display: block !important;
 }
 
 .bookmark-btn {

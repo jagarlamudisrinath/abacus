@@ -44,6 +44,26 @@ export interface WeeklyActivity {
   questions: number;
 }
 
+export interface ActivityDay {
+  date: string;
+  sessions: number;
+  questions: number;
+}
+
+export interface WeekStats {
+  sessions: number;
+  questions: number;
+  correct: number;
+  accuracy: number;
+  timeSpent: number;
+  averageScore: number;
+}
+
+export interface ComparisonData {
+  thisWeek: WeekStats;
+  lastWeek: WeekStats;
+}
+
 export interface WeakAreaAnalysis {
   practiceSheetId: string;
   practiceSheetName: string;
@@ -188,4 +208,106 @@ export async function deleteSession(sessionId: string): Promise<void> {
   if (!response.ok) {
     throw new Error('Failed to delete session');
   }
+}
+
+export async function fetchActivity(days: number = 84): Promise<{ activity: ActivityDay[] }> {
+  const response = await fetch(`${API_BASE}/progress/activity?days=${days}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch activity data');
+  }
+
+  return response.json();
+}
+
+export async function fetchComparison(): Promise<ComparisonData> {
+  const response = await fetch(`${API_BASE}/progress/comparison`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch comparison data');
+  }
+
+  return response.json();
+}
+
+// Paper Analytics types
+export interface PaperAnalytics {
+  practiceSheetId: string;
+  practiceSheetName: string;
+  totalSessions: number;
+  averageScore: number;
+  bestScore: number;
+  worstScore: number;
+  averageTimeTaken: number;
+  totalQuestionsAttempted: number;
+  overallAccuracy: number;
+  trend: 'improving' | 'declining' | 'stable';
+  sessions: PaperSessionSummary[];
+  scoreTrend: Array<{ date: string; score: number }>;
+}
+
+export interface PaperSessionSummary {
+  sessionId: string;
+  completedAt: string;
+  score: number;
+  correct: number;
+  incorrect: number;
+  unanswered: number;
+  totalQuestions: number;
+  timeTaken: number;
+  comparedToAverage: 'above' | 'below' | 'equal';
+}
+
+export interface AttemptedPaper {
+  practiceSheetId: string;
+  practiceSheetName: string;
+  sessionCount: number;
+  lastAttempted: string;
+  averageScore: number;
+}
+
+export async function fetchAttemptedPapers(): Promise<AttemptedPaper[]> {
+  const response = await fetch(`${API_BASE}/progress/attempted-papers`, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch attempted papers');
+  }
+
+  return response.json();
+}
+
+export async function fetchPaperAnalytics(
+  practiceSheetId: string,
+  range: 'week' | 'month' | 'all' = 'all'
+): Promise<PaperAnalytics> {
+  const response = await fetch(
+    `${API_BASE}/progress/paper-analytics/${encodeURIComponent(practiceSheetId)}?range=${range}`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader(),
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch paper analytics');
+  }
+
+  return response.json();
 }

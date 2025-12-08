@@ -1,4 +1,4 @@
-import { Test, TestMode, Response, TestResult, PracticeSheet } from '../types';
+import { Test, TestMode, Response, TestResult, PracticeSheet, IntervalStats } from '../types';
 
 const API_BASE = process.env.REACT_APP_API_URL || '/api';
 
@@ -92,7 +92,8 @@ export async function saveProgress(
 export async function submitTest(
   testId: string,
   responses: Record<string, Response>,
-  timeTaken: number
+  timeTaken: number,
+  intervals?: IntervalStats[]
 ): Promise<TestResult> {
   const response = await fetch(`${API_BASE}/test/${testId}/submit`, {
     method: 'POST',
@@ -101,6 +102,7 @@ export async function submitTest(
       testId,
       responses,
       timeTaken,
+      intervals,
     }),
   });
 

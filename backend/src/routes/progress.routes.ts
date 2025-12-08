@@ -119,4 +119,76 @@ router.delete('/sessions/:sessionId', async (req: AuthenticatedRequest, res: Res
   }
 });
 
+/**
+ * GET /api/progress/activity
+ * Get daily activity for heatmap (last 84 days by default)
+ */
+router.get('/activity', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.student!.id;
+    const days = parseInt(req.query.days as string) || 84;
+
+    const activity = await progressService.getActivityByDay(studentId, days);
+    res.json({ activity });
+  } catch (error) {
+    console.error('Error fetching activity:', error);
+    res.status(500).json({ error: 'Failed to fetch activity data' });
+  }
+});
+
+/**
+ * GET /api/progress/comparison
+ * Get this week vs last week comparison
+ */
+router.get('/comparison', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.student!.id;
+    const comparison = await progressService.getWeekComparison(studentId);
+    res.json(comparison);
+  } catch (error) {
+    console.error('Error fetching comparison:', error);
+    res.status(500).json({ error: 'Failed to fetch comparison data' });
+  }
+});
+
+/**
+ * GET /api/progress/attempted-papers
+ * Get list of practice papers the student has attempted
+ */
+router.get('/attempted-papers', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.student!.id;
+    const papers = await progressService.getAttemptedPapers(studentId);
+    res.json(papers);
+  } catch (error) {
+    console.error('Error fetching attempted papers:', error);
+    res.status(500).json({ error: 'Failed to fetch attempted papers' });
+  }
+});
+
+/**
+ * GET /api/progress/paper-analytics/:practiceSheetId
+ * Get detailed analytics for a specific practice paper
+ * Query params: range (week | month | all)
+ */
+router.get('/paper-analytics/:practiceSheetId', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.student!.id;
+    const { practiceSheetId } = req.params;
+    const range = (req.query.range as 'week' | 'month' | 'all') || 'all';
+
+    const analytics = await progressService.getPaperAnalytics(studentId, practiceSheetId, range);
+
+    if (!analytics) {
+      res.status(404).json({ error: 'No sessions found for this practice paper' });
+      return;
+    }
+
+    res.json(analytics);
+  } catch (error) {
+    console.error('Error fetching paper analytics:', error);
+    res.status(500).json({ error: 'Failed to fetch paper analytics' });
+  }
+});
+
 export default router;

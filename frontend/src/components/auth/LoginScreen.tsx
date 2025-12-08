@@ -4,13 +4,12 @@ import './LoginScreen.css';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
+  onShowAdmin?: () => void;
 }
 
-export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
+export default function LoginScreen({ onLoginSuccess, onShowAdmin }: LoginScreenProps) {
   const { login } = useAuth();
   const [identifier, setIdentifier] = useState('');
-  const [name, setName] = useState('');
-  const [showNameInput, setShowNameInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,23 +19,11 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
     setIsLoading(true);
 
     try {
-      const result = await login(identifier, name || undefined);
-
-      if (result.isNewUser && !name) {
-        // If it's a new user and no name was provided, show the name input
-        setShowNameInput(true);
-        setIsLoading(false);
-        return;
-      }
-
+      await login(identifier);
       onLoginSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
-      if (message.includes('Name is required')) {
-        setShowNameInput(true);
-      } else {
-        setError(message);
-      }
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -70,32 +57,26 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
             />
           </div>
 
-          {showNameInput && (
-            <div className="form-group">
-              <label htmlFor="name">Your Name</label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your name"
-                required
-                autoFocus
-              />
-              <p className="form-hint">First time? Enter your name to create an account.</p>
-            </div>
-          )}
-
           {error && <div className="login-error">{error}</div>}
 
           <button type="submit" className="btn btn-primary login-btn" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : showNameInput ? 'Create Account' : 'Continue'}
+            {isLoading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         <p className="login-note">
-          Sign in to save your progress and track your performance.
+          Don't have an account? Contact your teacher to create one.
         </p>
+
+        {onShowAdmin && (
+          <button
+            type="button"
+            className="admin-link"
+            onClick={onShowAdmin}
+          >
+            Admin Panel
+          </button>
+        )}
       </div>
     </div>
   );

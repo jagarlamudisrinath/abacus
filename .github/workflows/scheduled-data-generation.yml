@@ -1,0 +1,90 @@
+name: Scheduled Data Generation
+
+on:
+  schedule:
+    # Run daily at 2 PM UTC (9 AM EST / 6 AM PST)
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+    inputs:
+      sessions_per_run:
+        description: 'Number of sessions per user'
+        required: false
+        default: '3'
+      accuracy_percentage:
+        description: 'Target accuracy percentage (0-100)'
+        required: false
+        default: '75'
+      test_users:
+        description: 'Comma-separated user identifiers (leave empty for config defaults)'
+        required: false
+        default: ''
+
+jobs:
+  generate-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: Install E2E dependencies
+        working-directory: ./e2e
+        run: npm ci || npm install
+
+      - name: Create config from secrets
+        working-directory: ./e2e
+        run: |
+          cat > config/test-config.yaml << 'EOF'
+          environment:
+            api_url: "${{ secrets.API_URL || 'http://localhost:3001/api' }}"
+            frontend_url: "${{ secrets.FRONTEND_URL || 'http://localhost:3000' }}"
+
+          test_users:
+            - identifier: "${{ secrets.TEST_USER_1 || 'josna@gmail.com' }}"
+              name: "Test User 1"
+
+          session_config:
+            accuracy_percentage: ${{ github.event.inputs.accuracy_percentage || 75 }}
+            sessions_per_run: ${{ github.event.inputs.sessions_per_run || 3 }}
+            min_time_per_question_ms: 1000
+            max_time_per_question_ms: 5000
+            practice_sheets:
+              - "aa-2"
+              - "aa-3"
+
+          browser_config:
+            headless: true
+            timeout: 30000
+          EOF
+
+      - name: Run data seeder
+        working-directory: ./e2e
+        env:
+          API_URL: ${{ secrets.API_URL }}
+          SESSIONS_PER_RUN: ${{ github.event.inputs.sessions_per_run || '3' }}
+          ACCURACY_PERCENTAGE: ${{ github.event.inputs.accuracy_percentage || '75' }}
+        run: |
+          echo "Starting data generation..."
+          echo "Sessions per run: $SESSIONS_PER_RUN"
+          echo "Target accuracy: $ACCURACY_PERCENTAGE%"
+
+          npx ts-node data-seeder/seeder.ts \
+            --sessions $SESSIONS_PER_RUN \
+            --accuracy $ACCURACY_PERCENTAGE
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "Data generation workflow completed"
+          echo "=========================================="
+          echo "Sessions per run: ${{ github.event.inputs.sessions_per_run || '3' }}"
+          echo "Target accuracy: ${{ github.event.inputs.accuracy_percentage || '75' }}%"
+          echo "Timestamp: $(date -u)"

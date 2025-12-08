@@ -1,0 +1,35 @@
+# E2E Test Configuration for Alama Abacus
+# Copy this file to test-config.yaml and update with your settings
+
+environment:
+  api_url: "http://localhost:3001/api"
+  frontend_url: "http://localhost:3000"
+
+# Test users configuration - add your test user identifiers
+test_users:
+  - identifier: "student1@test.com"
+    name: "Test Student 1"
+  - identifier: "student2@test.com"
+    name: "Test Student 2"
+
+# Practice session configuration
+session_config:
+  # Accuracy percentage (0-100)
+  accuracy_percentage: 75
+
+  # Number of sessions to run per user per execution
+  sessions_per_run: 3
+
+  # Time simulation settings (milliseconds)
+  min_time_per_question_ms: 1000
+  max_time_per_question_ms: 5000
+
+  # Practice sheets to use (cycle through these)
+  practice_sheets:
+    - "aa-2"
+    - "aa-3"
+
+# Browser settings for Playwright tests
+browser_config:
+  headless: true
+  timeout: 30000
