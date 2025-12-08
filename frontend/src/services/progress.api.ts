@@ -175,3 +175,17 @@ export async function fetchTrends(days: number = 30): Promise<{ scoreTrend: Tren
 
   return response.json();
 }
+
+export async function deleteSession(sessionId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/progress/sessions/${sessionId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAuthHeader(),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete session');
+  }
+}

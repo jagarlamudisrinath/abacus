@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { SessionDetail, fetchSessionDetail } from '../../services/progress.api';
+import { SessionDetail, fetchSessionDetail, deleteSession } from '../../services/progress.api';
 import './SessionDetailModal.css';
 
 interface SessionDetailModalProps {
   sessionId: string;
   onClose: () => void;
+  onDelete?: () => void;
 }
 
-export default function SessionDetailModal({ sessionId, onClose }: SessionDetailModalProps) {
+export default function SessionDetailModal({ sessionId, onClose, onDelete }: SessionDetailModalProps) {
   const [session, setSession] = useState<SessionDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     async function loadSession() {
@@ -64,20 +67,86 @@ export default function SessionDetailModal({ sessionId, onClose }: SessionDetail
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        if (showDeleteConfirm) {
+          setShowDeleteConfirm(false);
+        } else {
+          onClose();
+        }
       }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
+  }, [onClose, showDeleteConfirm]);
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteSession(sessionId);
+      onClose();
+      onDelete?.();
+    } catch (err) {
+      setError('Failed to delete session');
+      console.error(err);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+  };
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="session-detail-modal">
         <div className="modal-header">
           <h2>Session Details</h2>
-          <button className="close-btn" onClick={onClose}>&times;</button>
+          <div className="modal-header-actions">
+            <button
+              className="delete-btn"
+              onClick={handleDeleteClick}
+              disabled={isLoading || isDeleting}
+              title="Delete this session"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+            </button>
+            <button className="close-btn" onClick={onClose}>&times;</button>
+          </div>
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && (
+          <div className="delete-confirm-overlay">
+            <div className="delete-confirm-dialog">
+              <h3>Delete Session?</h3>
+              <p>Are you sure you want to delete this session? This action cannot be undone.</p>
+              <div className="delete-confirm-actions">
+                <button
+                  className="cancel-btn"
+                  onClick={handleCancelDelete}
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="confirm-delete-btn"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {isLoading && (
           <div className="modal-loading">

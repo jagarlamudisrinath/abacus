@@ -117,7 +117,7 @@ export default function Dashboard({ onStartPractice, onBack }: DashboardProps) {
 
           <div className="sessions-section">
             <h2>Recent Sessions</h2>
-            <SessionHistory sessions={data.stats.recentSessions} />
+            <SessionHistory sessions={data.stats.recentSessions} onSessionDeleted={loadDashboard} />
           </div>
         </div>
 

@@ -208,3 +208,11 @@ export async function getRecentSessions(studentId: string, limit: number = 10): 
   );
   return result.rows.map(mapRowToSummary);
 }
+
+export async function deleteSession(sessionId: string, studentId: string): Promise<boolean> {
+  const result = await query(
+    'DELETE FROM sessions WHERE id = $1 AND student_id = $2',
+    [sessionId, studentId]
+  );
+  return (result.rowCount ?? 0) > 0;
+}

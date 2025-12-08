@@ -285,3 +285,10 @@ export async function getSessionDetail(
 ): Promise<SessionDetail | null> {
   return sessionRepo.getSessionDetail(sessionId, studentId);
 }
+
+export async function deleteSession(
+  sessionId: string,
+  studentId: string
+): Promise<boolean> {
+  return sessionRepo.deleteSession(sessionId, studentId);
+}

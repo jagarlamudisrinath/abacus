@@ -96,4 +96,27 @@ router.get('/trends', async (req: AuthenticatedRequest, res: Response) => {
   }
 });
 
+/**
+ * DELETE /api/progress/sessions/:sessionId
+ * Delete a session
+ */
+router.delete('/sessions/:sessionId', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const studentId = req.student!.id;
+    const { sessionId } = req.params;
+
+    const deleted = await progressService.deleteSession(sessionId, studentId);
+
+    if (!deleted) {
+      res.status(404).json({ error: 'Session not found' });
+      return;
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting session:', error);
+    res.status(500).json({ error: 'Failed to delete session' });
+  }
+});
+
 export default router;

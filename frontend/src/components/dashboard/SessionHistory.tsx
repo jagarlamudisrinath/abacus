@@ -5,9 +5,10 @@ import './SessionHistory.css';
 
 interface SessionHistoryProps {
   sessions: SessionSummary[];
+  onSessionDeleted?: () => void;
 }
 
-export default function SessionHistory({ sessions }: SessionHistoryProps) {
+export default function SessionHistory({ sessions, onSessionDeleted }: SessionHistoryProps) {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   const formatDate = (dateString: string) => {
@@ -90,6 +91,7 @@ export default function SessionHistory({ sessions }: SessionHistoryProps) {
         <SessionDetailModal
           sessionId={selectedSessionId}
           onClose={handleCloseModal}
+          onDelete={onSessionDeleted}
         />
       )}
     </div>
