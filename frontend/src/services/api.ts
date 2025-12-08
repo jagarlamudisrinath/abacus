@@ -1,6 +1,5 @@
 import { Test, TestMode, Response, TestResult, PracticeSheet, IntervalStats } from '../types';
-
-const API_BASE = process.env.REACT_APP_API_URL || '/api';
+import { API_BASE } from '../config/api.config';
 
 function getAuthToken(): string | null {
   return localStorage.getItem('authToken');

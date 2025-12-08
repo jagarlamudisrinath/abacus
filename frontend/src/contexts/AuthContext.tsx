@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { API_BASE } from '../config/api.config';
 
 export type UserRole = 'student' | 'teacher' | 'superuser';
 
@@ -28,8 +29,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const API_BASE = process.env.REACT_APP_API_URL || '/api';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [student, setStudent] = useState<Student | null>(null);

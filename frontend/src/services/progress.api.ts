@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_URL || '/api';
+import { API_BASE } from '../config/api.config';
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('authToken');
