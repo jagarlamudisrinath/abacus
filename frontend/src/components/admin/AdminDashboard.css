@@ -53,6 +53,12 @@
   border-left: 1px solid #ddd;
 }
 
+.admin-header .header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .admin-tabs {
   display: flex;
   gap: 8px;

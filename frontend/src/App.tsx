@@ -268,7 +268,7 @@ function AppContent() {
       return <SuperuserDashboard onLogout={handleAdminBack} />;
     }
     // Regular teacher sees AdminDashboard
-    return <AdminDashboard onBack={handleAdminBack} />;
+    return <AdminDashboard onBack={handleAdminBack} onStartPractice={() => setScreen('welcome')} />;
   }
 
   // Show loading while checking auth state
@@ -309,6 +309,7 @@ function AppContent() {
         onStartTest={handleStartTest}
         onShowDashboard={handleShowDashboard}
         onLogout={handleLogout}
+        onManageSheets={isTeacher ? handleShowAdmin : undefined}
       />
     );
   }

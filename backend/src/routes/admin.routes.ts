@@ -4,6 +4,7 @@ import * as studentRepo from '../repositories/student.repository';
 import * as progressService from '../services/progress.service';
 import { requireTeacher } from '../middleware/requireTeacher.middleware';
 import { AuthenticatedRequest } from '../types/auth.types';
+import { scrapeGoogleForm } from '../utils/googleFormsScraper';
 
 const router = Router();
 
@@ -105,6 +106,39 @@ router.get('/practice-sheets/:id', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching practice sheet:', error);
     res.status(500).json({ error: 'Failed to fetch practice sheet' });
+  }
+});
+
+/**
+ * GET /api/admin/practice-sheets/:id/export
+ * Export practice sheet questions as CSV or TSV
+ */
+router.get('/practice-sheets/:id/export', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const format = (req.query.format as string) || 'csv';
+
+    const sheet = await practiceSheetRepo.findById(id);
+
+    if (!sheet) {
+      res.status(404).json({ error: 'Practice sheet not found' });
+      return;
+    }
+
+    // Generate CSV/TSV content
+    const delimiter = format === 'tsv' ? '\t' : ',';
+    const header = `expression${delimiter}answer`;
+    const rows = sheet.questions.map((q) => `${q.expression}${delimiter}${q.answer}`);
+    const content = [header, ...rows].join('\n');
+
+    // Set headers for file download
+    const filename = `${sheet.id}-questions.${format}`;
+    res.setHeader('Content-Type', format === 'tsv' ? 'text/tab-separated-values' : 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(content);
+  } catch (error) {
+    console.error('Error exporting practice sheet:', error);
+    res.status(500).json({ error: 'Failed to export practice sheet' });
   }
 });
 
@@ -318,6 +352,28 @@ router.post('/practice-sheets/parse-bulk', async (req: Request, res: Response) =
   } catch (error) {
     console.error('Error parsing bulk text:', error);
     res.status(500).json({ error: 'Failed to parse bulk text' });
+  }
+});
+
+/**
+ * POST /api/admin/practice-sheets/scrape-google-form
+ * Scrape questions from a Google Form URL
+ */
+router.post('/practice-sheets/scrape-google-form', async (req: Request, res: Response) => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      res.status(400).json({ error: 'url is required' });
+      return;
+    }
+
+    const questions = await scrapeGoogleForm(url);
+    res.json({ questions, count: questions.length });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to scrape Google Form';
+    console.error('Error scraping Google Form:', error);
+    res.status(400).json({ error: message });
   }
 });
 

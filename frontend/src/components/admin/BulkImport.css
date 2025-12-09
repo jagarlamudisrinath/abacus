@@ -4,6 +4,60 @@
   gap: 20px;
 }
 
+.import-mode-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.import-mode-tab {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.2s;
+}
+
+.import-mode-tab:hover {
+  color: #667eea;
+}
+
+.import-mode-tab.active {
+  color: #667eea;
+  border-bottom-color: #667eea;
+}
+
+.google-form-input {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.google-form-input .url-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.google-form-input .url-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.hint-text {
+  font-size: 0.85rem;
+  color: #888;
+  font-style: italic;
+}
+
 .import-instructions {
   padding: 16px;
   background: #f0f4ff;
@@ -36,6 +90,25 @@
   margin: 0;
   font-size: 0.85rem;
   color: #666;
+}
+
+.file-upload-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #ddd;
+}
+
+.file-upload-btn {
+  flex-shrink: 0;
+}
+
+.file-hint {
+  color: #666;
+  font-size: 0.9rem;
 }
 
 .error-message {

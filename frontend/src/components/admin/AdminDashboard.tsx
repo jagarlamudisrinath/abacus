@@ -11,12 +11,13 @@ import './AdminDashboard.css';
 
 interface AdminDashboardProps {
   onBack: () => void;
+  onStartPractice?: () => void;
 }
 
 type ViewMode = 'list' | 'create' | 'edit';
 type TabType = 'sheets' | 'students';
 
-export default function AdminDashboard({ onBack }: AdminDashboardProps) {
+export default function AdminDashboard({ onBack, onStartPractice }: AdminDashboardProps) {
   const { student } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('sheets');
   const [sheets, setSheets] = useState<PracticeSheetSummary[]>([]);
@@ -92,22 +93,26 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     <div className="admin-dashboard">
       <header className="admin-header">
         <div className="header-left">
-          <button className="back-btn" onClick={onBack}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            Logout
-          </button>
           <h1>Teacher Dashboard</h1>
           {student && (
             <span className="teacher-name">Welcome, {student.name}</span>
           )}
         </div>
-        {activeTab === 'sheets' && (
-          <button className="btn btn-primary" onClick={handleCreate}>
-            + Create New Sheet
+        <div className="header-right">
+          {activeTab === 'sheets' && (
+            <button className="btn btn-primary" onClick={handleCreate}>
+              + Create New Sheet
+            </button>
+          )}
+          {onStartPractice && (
+            <button className="btn btn-secondary" onClick={onStartPractice}>
+              Start Practice
+            </button>
+          )}
+          <button className="btn btn-outline" onClick={onBack}>
+            Logout
           </button>
-        )}
+        </div>
       </header>
 
       <div className="admin-tabs">

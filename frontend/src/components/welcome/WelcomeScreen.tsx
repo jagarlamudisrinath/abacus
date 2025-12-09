@@ -8,6 +8,7 @@ interface WelcomeScreenProps {
   onStartTest: (mode: TestMode, practiceSheetId: string) => void;
   onShowDashboard: () => void;
   onLogout: () => void;
+  onManageSheets?: () => void;
 }
 
 // Fallback practice sheets in case API is not available
@@ -22,8 +23,8 @@ const FALLBACK_SHEETS: PracticeSheet[] = [
   { id: 'aa2-8', name: 'AA2 Practice Sheet 8', questionCount: 74 },
 ];
 
-export default function WelcomeScreen({ onStartTest, onShowDashboard, onLogout }: WelcomeScreenProps) {
-  const { student } = useAuth();
+export default function WelcomeScreen({ onStartTest, onShowDashboard, onLogout, onManageSheets }: WelcomeScreenProps) {
+  const { student, isTeacher } = useAuth();
   const [selectedMode, setSelectedMode] = useState<TestMode>('practice');
   const [selectedSheet, setSelectedSheet] = useState('aa-2');
   const [practiceSheets, setPracticeSheets] = useState<PracticeSheet[]>(FALLBACK_SHEETS);
@@ -64,6 +65,11 @@ export default function WelcomeScreen({ onStartTest, onShowDashboard, onLogout }
           <div className="header-top">
             <div className="logo-large">ALAMA</div>
             <div className="header-actions">
+              {isTeacher && onManageSheets && (
+                <button className="btn btn-secondary header-btn" onClick={onManageSheets}>
+                  Manage Sheets
+                </button>
+              )}
               <button className="btn btn-secondary header-btn" onClick={onShowDashboard}>
                 My Progress
               </button>

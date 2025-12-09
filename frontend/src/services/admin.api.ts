@@ -171,6 +171,40 @@ export async function parseBulkText(bulkText: string): Promise<BulkParseResult> 
   return handleResponse(response);
 }
 
+export async function scrapeGoogleForm(url: string): Promise<BulkParseResult> {
+  const response = await fetch(`${API_BASE}/admin/practice-sheets/scrape-google-form`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ url }),
+  });
+  return handleResponse(response);
+}
+
+export async function exportPracticeSheetQuestions(
+  sheetId: string,
+  format: 'csv' | 'tsv' = 'csv'
+): Promise<void> {
+  const response = await fetch(
+    `${API_BASE}/admin/practice-sheets/${sheetId}/export?format=${format}`,
+    { headers: getAuthHeaders() }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to export questions');
+  }
+
+  // Trigger file download
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${sheetId}-questions.${format}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
 // =====================================
 // Student Management API
 // =====================================

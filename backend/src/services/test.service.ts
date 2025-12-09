@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Test, Section, TestMode, GenerateTestRequest, Response, TestResult, SectionResult, Question } from '../types';
 import { getPracticeSheetById } from '../data/practiceSheets';
 import * as sessionRepo from '../repositories/session.repository';
+import * as practiceSheetRepo from '../repositories/practiceSheet.repository';
 
 // In-memory storage for tests (used as fallback for unauthenticated users)
 const testsStore: Map<string, Test> = new Map();
@@ -16,16 +17,37 @@ export interface GenerateTestOptions {
 export async function generateTest(request: GenerateTestRequest, options?: GenerateTestOptions): Promise<Test> {
   const testId = uuidv4();
 
-  // Get the practice sheet by ID
-  const practiceSheet = getPracticeSheetById(request.practiceSheetId);
-  if (!practiceSheet) {
+  // Try database first, then fall back to static data
+  let practiceSheetData: { id: string; name: string; questions: Array<{ expression: string; answer: number }> } | null = null;
+
+  // First try database
+  const dbSheet = await practiceSheetRepo.findById(request.practiceSheetId);
+  if (dbSheet) {
+    practiceSheetData = {
+      id: dbSheet.id,
+      name: dbSheet.name,
+      questions: dbSheet.questions,
+    };
+  } else {
+    // Fall back to static data
+    const staticSheet = getPracticeSheetById(request.practiceSheetId);
+    if (staticSheet) {
+      practiceSheetData = {
+        id: staticSheet.id,
+        name: staticSheet.name,
+        questions: staticSheet.questions,
+      };
+    }
+  }
+
+  if (!practiceSheetData) {
     throw new Error(`Practice sheet not found: ${request.practiceSheetId}`);
   }
 
   const sectionId = uuidv4();
 
   // Create questions from the practice sheet
-  const questions: Question[] = practiceSheet.questions.map((q, index) => ({
+  const questions: Question[] = practiceSheetData.questions.map((q, index) => ({
     id: uuidv4(),
     sectionId,
     questionNumber: index + 1,
@@ -37,7 +59,7 @@ export async function generateTest(request: GenerateTestRequest, options?: Gener
   // Create a single section with all questions from the practice sheet
   const section: Section = {
     id: sectionId,
-    name: practiceSheet.name,
+    name: practiceSheetData.name,
     type: 'addition_subtraction',
     questions,
     isLocked: false,
@@ -48,7 +70,7 @@ export async function generateTest(request: GenerateTestRequest, options?: Gener
 
   const test: Test = {
     id: testId,
-    name: practiceSheet.name,
+    name: practiceSheetData.name,
     mode: request.mode,
     practiceSheetId: request.practiceSheetId,
     sections: [section],
@@ -68,7 +90,7 @@ export async function generateTest(request: GenerateTestRequest, options?: Gener
       const sessionId = await sessionRepo.createSession(
         options.studentId,
         request.practiceSheetId,
-        practiceSheet.name,
+        practiceSheetData.name,
         request.mode,
         questions.length
       );
