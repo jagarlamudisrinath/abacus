@@ -1,0 +1,334 @@
+import React, { useState, useEffect } from 'react';
+import {
+  fetchPracticeSheet,
+  createPracticeSheet,
+  updatePracticeSheet,
+  addQuestions,
+  deletePracticeSheetQuestion,
+  updatePracticeSheetQuestion,
+  PracticeSheetDetail,
+} from '../../services/superuser.api';
+import BulkImport from './BulkImport';
+import './PracticeSheetEditor.css';
+
+interface Question {
+  questionNumber: number;
+  expression: string;
+  answer: number;
+}
+
+interface SuperuserPracticeSheetEditorProps {
+  sheetId: string | null;
+  onClose: () => void;
+}
+
+type Tab = 'manual' | 'bulk';
+
+export default function SuperuserPracticeSheetEditor({ sheetId, onClose }: SuperuserPracticeSheetEditorProps) {
+  const [sheet, setSheet] = useState<PracticeSheetDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(!!sheetId);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('manual');
+
+  // Form fields
+  const [name, setName] = useState('');
+
+  // Manual entry fields
+  const [newExpression, setNewExpression] = useState('');
+  const [newAnswer, setNewAnswer] = useState('');
+
+  // Editing question
+  const [editingQuestion, setEditingQuestion] = useState<number | null>(null);
+  const [editExpression, setEditExpression] = useState('');
+  const [editAnswer, setEditAnswer] = useState('');
+
+  useEffect(() => {
+    if (sheetId) {
+      loadSheet();
+    }
+  }, [sheetId]);
+
+  const loadSheet = async () => {
+    if (!sheetId) return;
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await fetchPracticeSheet(sheetId);
+      setSheet(data);
+      setName(data.name);
+    } catch (err) {
+      setError('Failed to load practice sheet');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveSheet = async () => {
+    if (!name.trim()) {
+      setError('Name is required');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setError(null);
+
+      if (sheetId) {
+        // Update existing sheet
+        await updatePracticeSheet(sheetId, name);
+        await loadSheet();
+      } else {
+        // Create new sheet
+        const created = await createPracticeSheet({
+          name,
+          questions: [],
+        });
+        setSheet(created);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to save practice sheet');
+      console.error(err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAddQuestion = async () => {
+    if (!sheet) return;
+    if (!newExpression.trim()) {
+      setError('Expression is required');
+      return;
+    }
+
+    const answer = parseInt(newAnswer);
+    if (isNaN(answer)) {
+      setError('Answer must be a number');
+      return;
+    }
+
+    try {
+      setError(null);
+      await addQuestions(sheet.id, {
+        questions: [{ expression: newExpression.trim(), answer }],
+      });
+      setNewExpression('');
+      setNewAnswer('');
+      await loadSheet();
+    } catch (err: any) {
+      setError(err.message || 'Failed to add question');
+      console.error(err);
+    }
+  };
+
+  const handleBulkImport = async (questions: Array<{ expression: string; answer: number }>, replace: boolean) => {
+    if (!sheet) return;
+    try {
+      setError(null);
+      await addQuestions(sheet.id, { questions, replace });
+      await loadSheet();
+    } catch (err: any) {
+      setError(err.message || 'Failed to import questions');
+      console.error(err);
+    }
+  };
+
+  const handleDeleteQuestion = async (questionNumber: number) => {
+    if (!sheet) return;
+    try {
+      setError(null);
+      await deletePracticeSheetQuestion(sheet.id, questionNumber);
+      await loadSheet();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete question');
+      console.error(err);
+    }
+  };
+
+  const handleStartEdit = (q: Question) => {
+    setEditingQuestion(q.questionNumber);
+    setEditExpression(q.expression);
+    setEditAnswer(String(q.answer));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!sheet || editingQuestion === null) return;
+
+    const answer = parseInt(editAnswer);
+    if (isNaN(answer)) {
+      setError('Answer must be a number');
+      return;
+    }
+
+    try {
+      setError(null);
+      await updatePracticeSheetQuestion(
+        sheet.id,
+        editingQuestion,
+        editExpression.trim(),
+        answer
+      );
+      setEditingQuestion(null);
+      await loadSheet();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update question');
+      console.error(err);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingQuestion(null);
+    setEditExpression('');
+    setEditAnswer('');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="sheet-editor">
+        <div className="loading">Loading...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="sheet-editor">
+      <header className="editor-header">
+        <button className="back-btn" onClick={onClose}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Back to List
+        </button>
+        <h1>{sheetId ? 'Edit Practice Sheet' : 'Create Practice Sheet'}</h1>
+      </header>
+
+      {error && (
+        <div className="error-message">
+          {error}
+          <button onClick={() => setError(null)}>Dismiss</button>
+        </div>
+      )}
+
+      <div className="editor-content">
+        <section className="metadata-section">
+          <h2>Sheet Details</h2>
+          <div className="form-group">
+            <label>Name *</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., AA Practice Sheet 1"
+            />
+          </div>
+
+          <button
+            className="btn btn-primary"
+            onClick={handleSaveSheet}
+            disabled={isSaving}
+          >
+            {isSaving ? 'Saving...' : sheetId ? 'Update Details' : 'Create Sheet'}
+          </button>
+        </section>
+
+        {sheet && (
+          <section className="questions-section">
+            <div className="questions-header">
+              <h2>Questions ({sheet.questions.length})</h2>
+            </div>
+
+            <div className="tabs">
+              <button
+                className={`tab ${activeTab === 'manual' ? 'active' : ''}`}
+                onClick={() => setActiveTab('manual')}
+              >
+                Manual Entry
+              </button>
+              <button
+                className={`tab ${activeTab === 'bulk' ? 'active' : ''}`}
+                onClick={() => setActiveTab('bulk')}
+              >
+                Bulk Import
+              </button>
+            </div>
+
+            {activeTab === 'manual' ? (
+              <div className="manual-entry">
+                <div className="add-question-form">
+                  <input
+                    type="text"
+                    value={newExpression}
+                    onChange={(e) => setNewExpression(e.target.value)}
+                    placeholder="Expression (e.g., 5+3-2)"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddQuestion()}
+                  />
+                  <input
+                    type="number"
+                    value={newAnswer}
+                    onChange={(e) => setNewAnswer(e.target.value)}
+                    placeholder="Answer"
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddQuestion()}
+                  />
+                  <button className="btn btn-primary" onClick={handleAddQuestion}>
+                    Add
+                  </button>
+                </div>
+
+                <div className="questions-list">
+                  {sheet.questions.map((q) => (
+                    <div key={q.questionNumber} className="question-item">
+                      {editingQuestion === q.questionNumber ? (
+                        <>
+                          <span className="question-number">{q.questionNumber}</span>
+                          <input
+                            type="text"
+                            value={editExpression}
+                            onChange={(e) => setEditExpression(e.target.value)}
+                            className="edit-input"
+                          />
+                          <input
+                            type="number"
+                            value={editAnswer}
+                            onChange={(e) => setEditAnswer(e.target.value)}
+                            className="edit-input answer"
+                          />
+                          <button className="btn btn-sm btn-primary" onClick={handleSaveEdit}>
+                            Save
+                          </button>
+                          <button className="btn btn-sm btn-secondary" onClick={handleCancelEdit}>
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span className="question-number">{q.questionNumber}</span>
+                          <span className="expression">{q.expression}</span>
+                          <span className="answer">= {q.answer}</span>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => handleStartEdit(q)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleDeleteQuestion(q.questionNumber)}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <BulkImport onImport={handleBulkImport} />
+            )}
+          </section>
+        )}
+      </div>
+    </div>
+  );
+}

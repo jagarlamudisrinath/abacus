@@ -3,7 +3,7 @@ import { query, withTransaction } from '../db';
 export interface PracticeSheetRow {
   id: string;
   name: string;
-  form_url: string | null;
+  created_by: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -19,16 +19,22 @@ export interface PracticeSheetQuestionRow {
 export interface PracticeSheetSummary {
   id: string;
   name: string;
-  formUrl: string | null;
   questionCount: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
+export interface PracticeSheetWithCreator extends PracticeSheetSummary {
+  createdBy: {
+    id: string;
+    name: string;
+    email: string | null;
+  } | null;
+}
+
 export interface PracticeSheetDetail {
   id: string;
   name: string;
-  formUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
   questions: Array<{
@@ -58,7 +64,6 @@ export async function findAll(): Promise<PracticeSheetSummary[]> {
   return result.rows.map((row) => ({
     id: row.id,
     name: row.name,
-    formUrl: row.form_url,
     questionCount: parseInt(row.question_count),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -86,7 +91,6 @@ export async function findById(id: string): Promise<PracticeSheetDetail | null> 
   return {
     id: sheet.id,
     name: sheet.name,
-    formUrl: sheet.form_url,
     createdAt: sheet.created_at,
     updatedAt: sheet.updated_at,
     questions: questionsResult.rows.map((q) => ({
@@ -103,15 +107,15 @@ export async function findById(id: string): Promise<PracticeSheetDetail | null> 
 export async function create(
   id: string,
   name: string,
-  formUrl: string | null,
-  questions: Question[]
+  questions: Question[],
+  createdBy?: string
 ): Promise<PracticeSheetDetail> {
   return await withTransaction(async (client) => {
     // Insert practice sheet
     await client.query(
-      `INSERT INTO practice_sheets (id, name, form_url)
+      `INSERT INTO practice_sheets (id, name, created_by)
        VALUES ($1, $2, $3)`,
-      [id, name, formUrl]
+      [id, name, createdBy || null]
     );
 
     // Insert questions
@@ -134,7 +138,6 @@ export async function create(
     return {
       id: sheet.id,
       name: sheet.name,
-      formUrl: sheet.form_url,
       createdAt: sheet.created_at,
       updatedAt: sheet.updated_at,
       questions: questions.map((q, i) => ({
@@ -147,19 +150,18 @@ export async function create(
 }
 
 /**
- * Update practice sheet metadata (name, formUrl)
+ * Update practice sheet metadata (name)
  */
 export async function update(
   id: string,
-  name: string,
-  formUrl: string | null
+  name: string
 ): Promise<PracticeSheetRow | null> {
   const result = await query<PracticeSheetRow>(
     `UPDATE practice_sheets
-     SET name = $2, form_url = $3, updated_at = NOW()
+     SET name = $2, updated_at = NOW()
      WHERE id = $1
      RETURNING *`,
-    [id, name, formUrl]
+    [id, name]
   );
   return result.rows[0] || null;
 }
@@ -312,6 +314,86 @@ export async function exists(id: string): Promise<boolean> {
   const result = await query<{ exists: boolean }>(
     'SELECT EXISTS(SELECT 1 FROM practice_sheets WHERE id = $1) as exists',
     [id]
+  );
+  return result.rows[0].exists;
+}
+
+/**
+ * Get all practice sheets with creator information (for superuser)
+ */
+export async function findAllWithCreator(): Promise<PracticeSheetWithCreator[]> {
+  const result = await query<{
+    id: string;
+    name: string;
+    question_count: string;
+    created_at: Date;
+    updated_at: Date;
+    creator_id: string | null;
+    creator_name: string | null;
+    creator_email: string | null;
+  }>(
+    `SELECT
+       ps.id,
+       ps.name,
+       COUNT(psq.id) as question_count,
+       ps.created_at,
+       ps.updated_at,
+       s.id as creator_id,
+       CONCAT(s.first_name, ' ', s.last_name) as creator_name,
+       s.email as creator_email
+     FROM practice_sheets ps
+     LEFT JOIN practice_sheet_questions psq ON ps.id = psq.practice_sheet_id
+     LEFT JOIN students s ON ps.created_by = s.id
+     GROUP BY ps.id, s.id
+     ORDER BY ps.created_at DESC`
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    questionCount: parseInt(row.question_count),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    createdBy: row.creator_id
+      ? {
+          id: row.creator_id,
+          name: row.creator_name || 'Unknown',
+          email: row.creator_email,
+        }
+      : null,
+  }));
+}
+
+/**
+ * Get practice sheets by creator (for teacher view - only their own sheets)
+ */
+export async function findByCreator(creatorId: string): Promise<PracticeSheetSummary[]> {
+  const result = await query<PracticeSheetRow & { question_count: string }>(
+    `SELECT ps.*, COUNT(psq.id) as question_count
+     FROM practice_sheets ps
+     LEFT JOIN practice_sheet_questions psq ON ps.id = psq.practice_sheet_id
+     WHERE ps.created_by = $1
+     GROUP BY ps.id
+     ORDER BY ps.name`,
+    [creatorId]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    questionCount: parseInt(row.question_count),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+}
+
+/**
+ * Check if a practice sheet belongs to a specific creator
+ */
+export async function belongsTo(sheetId: string, creatorId: string): Promise<boolean> {
+  const result = await query<{ exists: boolean }>(
+    'SELECT EXISTS(SELECT 1 FROM practice_sheets WHERE id = $1 AND created_by = $2) as exists',
+    [sheetId, creatorId]
   );
   return result.rows[0].exists;
 }
