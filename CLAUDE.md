@@ -8,13 +8,18 @@ Alama Abacus is a full-stack web application for abacus practice and assessment.
 
 ## Development Commands
 
-### Backend (Express.js + TypeScript)
+### Backend (Express.js + TypeScript + Bun)
 ```bash
 cd backend
-npm run dev              # Development server with hot reload (uses nodemon + ts-node)
-npm run build           # Compile TypeScript to dist/
-npm start               # Run production build from dist/
+bun install             # Install dependencies (first time or after package.json changes)
+bun run dev             # Development server with hot reload (Bun's built-in watch mode)
+bun run build           # Compile TypeScript to dist/
+bun run start           # Run production build from dist/
+bun run start:prod      # Run production build with NODE_ENV=production
+bun test                # Run tests (when implemented)
 ```
+
+**Note:** Bun is used as the runtime instead of Node.js for faster performance and built-in TypeScript support.
 
 ### Frontend (React + TypeScript)
 ```bash
@@ -62,20 +67,38 @@ docker-compose up -d --build
 
 ### Database Operations
 
+**Database Options:**
+- **Local Development:** PostgreSQL via Docker Compose
+- **Production/Staging:** Supabase (managed PostgreSQL with built-in features)
+
 **Migrations:**
 - Location: `backend/src/db/migrations/`
-- Auto-run on PostgreSQL container startup
+- Auto-run on PostgreSQL container startup (local Docker)
+- For Supabase: Run migrations manually via SQL Editor or migration tools
 - Naming: `NNN_description.sql` (e.g., `001_create_students_table.sql`)
 - Shell scripts (like `099_init_users.sh`) run last for seeding
 
 **Manual Database Access:**
 ```bash
-# Via Docker
+# Local Docker
 docker-compose exec postgres psql -U alama -d alama_abacus
 
-# Direct connection
+# Local direct connection
 psql postgresql://alama:alama123@localhost:5432/alama_abacus
+
+# Supabase (via connection string from dashboard)
+psql "postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres"
 ```
+
+**Supabase Setup:**
+1. Create project at https://supabase.com
+2. Get connection string from: Project Settings > Database > Connection String
+3. Use **Transaction pooler** (port 6543) for app queries - set as `DATABASE_URL`
+4. Use **Direct connection** (port 5432) only for migrations
+5. Database is optimized for Supabase with:
+   - Lower connection pool (max: 10) since Supabase handles pooling
+   - SSL enabled automatically
+   - Keep-warm connections (min: 2)
 
 **Database Schema:**
 - `students`: All users (students, teachers, superusers) with role-based access
@@ -225,8 +248,16 @@ Required environment variables (see `.env.example`):
 
 ```bash
 # Database
-DB_PASSWORD=alama123
+# Local development (Docker):
+DATABASE_URL=postgresql://alama:alama123@postgres:5432/alama_abacus
+
+# Local development (no Docker):
 DATABASE_URL=postgresql://alama:alama123@localhost:5432/alama_abacus
+
+# Supabase (Production/Staging):
+# Use Transaction pooler for app queries (recommended)
+DATABASE_URL=postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+# Get from: Supabase Dashboard > Project Settings > Database > Connection String > Transaction
 
 # Security
 JWT_SECRET=your-jwt-secret-change-in-production
@@ -282,7 +313,8 @@ POSTGRES_HOST_PORT=5432
 - CORS enabled
 
 **Performance:**
-- PostgreSQL connection pooling
+- Bun runtime (3-4x faster than Node.js)
+- PostgreSQL connection pooling (optimized for Supabase)
 - In-memory test storage for unauthenticated users
 - Frontend localStorage for auto-save
 - Debounced auto-save (5-second intervals)
@@ -291,14 +323,18 @@ POSTGRES_HOST_PORT=5432
 
 1. **Local Development:**
    ```bash
-   # Terminal 1: Start PostgreSQL
+   # Terminal 1: Start PostgreSQL (skip if using Supabase)
    docker-compose up -d postgres
 
    # Terminal 2: Start backend
-   cd backend && npm run dev
+   cd backend
+   bun install  # First time only
+   bun run dev
 
    # Terminal 3: Start frontend
-   cd frontend && npm start
+   cd frontend
+   npm install  # First time only
+   npm start
    ```
 
 2. **Docker Development:**
