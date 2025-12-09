@@ -76,7 +76,7 @@ function generateId(name: string): string {
 
 /**
  * GET /api/admin/practice-sheets
- * List all practice sheets
+ * List all practice sheets from database
  */
 router.get('/practice-sheets', async (_req: Request, res: Response) => {
   try {

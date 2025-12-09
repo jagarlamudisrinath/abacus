@@ -1,6 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Test, Section, TestMode, GenerateTestRequest, Response, TestResult, SectionResult, Question } from '../types';
-import { getPracticeSheetById } from '../data/practiceSheets';
 import * as sessionRepo from '../repositories/session.repository';
 import * as practiceSheetRepo from '../repositories/practiceSheet.repository';
 
@@ -17,32 +16,17 @@ export interface GenerateTestOptions {
 export async function generateTest(request: GenerateTestRequest, options?: GenerateTestOptions): Promise<Test> {
   const testId = uuidv4();
 
-  // Try database first, then fall back to static data
-  let practiceSheetData: { id: string; name: string; questions: Array<{ expression: string; answer: number }> } | null = null;
-
-  // First try database
+  // Get practice sheet from database
   const dbSheet = await practiceSheetRepo.findById(request.practiceSheetId);
-  if (dbSheet) {
-    practiceSheetData = {
-      id: dbSheet.id,
-      name: dbSheet.name,
-      questions: dbSheet.questions,
-    };
-  } else {
-    // Fall back to static data
-    const staticSheet = getPracticeSheetById(request.practiceSheetId);
-    if (staticSheet) {
-      practiceSheetData = {
-        id: staticSheet.id,
-        name: staticSheet.name,
-        questions: staticSheet.questions,
-      };
-    }
-  }
-
-  if (!practiceSheetData) {
+  if (!dbSheet) {
     throw new Error(`Practice sheet not found: ${request.practiceSheetId}`);
   }
+
+  const practiceSheetData = {
+    id: dbSheet.id,
+    name: dbSheet.name,
+    questions: dbSheet.questions,
+  };
 
   const sectionId = uuidv4();
 

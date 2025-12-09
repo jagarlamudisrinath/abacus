@@ -1,42 +1,26 @@
 import { Router, Request, Response } from 'express';
 import { generateTest, getTest, saveProgress, submitTest, getResponses } from '../services/test.service';
 import { GenerateTestRequest, SaveProgressRequest, SubmitTestRequest } from '../types';
-import { getAllPracticeSheets } from '../data/practiceSheets';
 import { optionalAuth } from '../middleware/auth.middleware';
 import { AuthenticatedRequest } from '../types/auth.types';
 import * as practiceSheetRepo from '../repositories/practiceSheet.repository';
 
 const router = Router();
 
-// Get available practice sheets (tries DB first, falls back to static data)
+// Get available practice sheets from database
 router.get('/practice-sheets', async (_req: Request, res: Response) => {
   try {
-    // Try to get from database first
     const dbSheets = await practiceSheetRepo.findAll();
-
-    if (dbSheets.length > 0) {
-      res.json({
-        sheets: dbSheets.map((s) => ({
-          id: s.id,
-          name: s.name,
-          questionCount: s.questionCount,
-        })),
-      });
-      return;
-    }
-
-    // Fall back to static data
-    const sheets = getAllPracticeSheets();
-    res.json({ sheets });
+    res.json({
+      sheets: dbSheets.map((s) => ({
+        id: s.id,
+        name: s.name,
+        questionCount: s.questionCount,
+      })),
+    });
   } catch (error) {
     console.error('Error getting practice sheets:', error);
-    // Fall back to static data on error
-    try {
-      const sheets = getAllPracticeSheets();
-      res.json({ sheets });
-    } catch {
-      res.status(500).json({ error: 'Failed to get practice sheets' });
-    }
+    res.status(500).json({ error: 'Failed to get practice sheets' });
   }
 });
 
