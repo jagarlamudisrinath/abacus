@@ -432,6 +432,94 @@ export async function getAttemptedPapers(studentId: string): Promise<AttemptedPa
   }));
 }
 
+export interface ClassComparisonStats {
+  classAverageScore: number;
+  classAverageTime: number;
+  totalStudentsAttempted: number;
+  studentRank: number;
+  scoreDiff: number; // positive = above average, negative = below
+  timeDiff: number; // positive = slower than average, negative = faster
+}
+
+export async function getClassComparisonStats(
+  sessionId: string,
+  studentId: string,
+  teacherId: string
+): Promise<ClassComparisonStats | null> {
+  // First get the session's practice_sheet_id and stats
+  const sessionResult = await query<{
+    practice_sheet_id: string;
+    score: string;
+    time_taken: string;
+  }>(
+    `SELECT practice_sheet_id, score, time_taken
+     FROM sessions
+     WHERE id = $1 AND student_id = $2 AND status = 'completed'`,
+    [sessionId, studentId]
+  );
+
+  if (sessionResult.rows.length === 0) {
+    return null;
+  }
+
+  const session = sessionResult.rows[0];
+  const studentScore = parseFloat(session.score);
+  const studentTime = parseInt(session.time_taken);
+
+  // Get class statistics for all students under this teacher who attempted the same practice sheet
+  const classStatsResult = await query<{
+    avg_score: string;
+    avg_time: string;
+    total_students: string;
+  }>(
+    `SELECT
+       AVG(s.score) as avg_score,
+       AVG(s.time_taken) as avg_time,
+       COUNT(DISTINCT s.student_id) as total_students
+     FROM sessions s
+     INNER JOIN students st ON s.student_id = st.id
+     WHERE st.teacher_id = $1
+       AND s.practice_sheet_id = $2
+       AND s.status = 'completed'`,
+    [teacherId, session.practice_sheet_id]
+  );
+
+  const classStats = classStatsResult.rows[0];
+  const classAverageScore = parseFloat(classStats.avg_score) || 0;
+  const classAverageTime = parseFloat(classStats.avg_time) || 0;
+  const totalStudentsAttempted = parseInt(classStats.total_students) || 0;
+
+  // Get student's rank based on their best score for this practice sheet
+  const rankResult = await query<{ rank: string }>(
+    `WITH student_best AS (
+       SELECT s.student_id, MAX(s.score) as best_score
+       FROM sessions s
+       INNER JOIN students st ON s.student_id = st.id
+       WHERE st.teacher_id = $1
+         AND s.practice_sheet_id = $2
+         AND s.status = 'completed'
+       GROUP BY s.student_id
+     ),
+     ranked AS (
+       SELECT student_id, RANK() OVER (ORDER BY best_score DESC) as rank
+       FROM student_best
+     )
+     SELECT rank FROM ranked WHERE student_id = $3`,
+    [teacherId, session.practice_sheet_id, studentId]
+  );
+
+  const studentRank = rankResult.rows.length > 0 ? parseInt(rankResult.rows[0].rank) : 0;
+
+  return {
+    classAverageScore,
+    classAverageTime,
+    totalStudentsAttempted,
+    studentRank,
+    scoreDiff: studentScore - classAverageScore,
+    timeDiff: studentTime - classAverageTime,
+  };
+}
+
 export async function getPaperAnalytics(
   studentId: string,
   practiceSheetId: string,

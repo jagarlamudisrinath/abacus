@@ -25,7 +25,7 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
 fi
 
 # Port configuration (can be overridden)
-POSTGRES_PORT="${POSTGRES_PORT:-5432}"
+POSTGRES_PORT="${POSTGRES_HOST_PORT:-5432}"
 BACKEND_PORT="${BACKEND_PORT:-3001}"
 FRONTEND_PORT="${FRONTEND_PORT:-3000}"
 

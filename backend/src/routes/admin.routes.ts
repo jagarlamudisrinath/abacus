@@ -604,4 +604,36 @@ router.get('/students/:studentId/sessions/:sessionId', async (req: Authenticated
   }
 });
 
+/**
+ * GET /api/admin/students/:studentId/sessions/:sessionId/class-comparison
+ * Get class comparison stats for a specific session (teacher insights)
+ */
+router.get('/students/:studentId/sessions/:sessionId/class-comparison', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const user = req.student!;
+    const { studentId, sessionId } = req.params;
+
+    const verification = await verifyStudentAccess(studentId, user.id, user.role === 'superuser');
+    if (!verification.valid) {
+      res.status(verification.error === 'Student not found' ? 404 : 403).json({ error: verification.error });
+      return;
+    }
+
+    // Use the teacher's ID for class comparison (or user's ID for superuser)
+    const teacherId = user.role === 'superuser' ? user.id : user.id;
+
+    const classStats = await progressService.getClassComparisonStats(sessionId, studentId, teacherId);
+
+    if (!classStats) {
+      res.status(404).json({ error: 'Session not found or no comparison data available' });
+      return;
+    }
+
+    res.json(classStats);
+  } catch (error) {
+    console.error('Error fetching class comparison stats:', error);
+    res.status(500).json({ error: 'Failed to fetch class comparison stats' });
+  }
+});
+
 export default router;

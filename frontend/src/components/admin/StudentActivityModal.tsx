@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   fetchStudentDashboard,
   fetchStudentSessionDetail,
+  fetchClassComparisonStats,
   StudentSummary,
+  ClassComparisonStats,
 } from '../../services/admin.api';
 import {
   DashboardData,
@@ -11,6 +13,7 @@ import {
 } from '../../services/progress.api';
 import StatsOverview from '../dashboard/StatsOverview';
 import ScoreChart from '../dashboard/ScoreChart';
+import TeacherPaperAnalysis from './TeacherPaperAnalysis';
 import './StudentActivityModal.css';
 
 interface StudentActivityModalProps {
@@ -23,6 +26,7 @@ export default function StudentActivityModal({ student, onClose }: StudentActivi
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<SessionDetail | null>(null);
+  const [classStats, setClassStats] = useState<ClassComparisonStats | null>(null);
   const [loadingSessionId, setLoadingSessionId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,8 +50,13 @@ export default function StudentActivityModal({ student, onClose }: StudentActivi
   const handleSessionClick = async (sessionId: string) => {
     try {
       setLoadingSessionId(sessionId);
-      const detail = await fetchStudentSessionDetail(student.id, sessionId);
+      // Fetch session detail and class comparison stats in parallel
+      const [detail, stats] = await Promise.all([
+        fetchStudentSessionDetail(student.id, sessionId),
+        fetchClassComparisonStats(student.id, sessionId).catch(() => null), // Don't fail if stats unavailable
+      ]);
       setSelectedSession(detail);
+      setClassStats(stats);
     } catch (err) {
       console.error('Failed to load session details:', err);
     } finally {
@@ -239,130 +248,22 @@ export default function StudentActivityModal({ student, onClose }: StudentActivi
           </div>
         )}
 
-        {/* Session Detail Nested Modal */}
+{/* Teacher Paper Analysis Modal */}
         {selectedSession && (
-          <div className="session-detail-nested" onClick={(e) => e.stopPropagation()}>
-            <div className="nested-modal-header">
-              <h3>Session Details</h3>
-              <button className="close-btn" onClick={() => setSelectedSession(null)}>&times;</button>
-            </div>
-            <div className="nested-modal-body">
-              {/* Session Header */}
-              <div className="session-header-card">
-                <div className="session-title">
-                  <h4>{selectedSession.practiceSheetName}</h4>
-                  <span className={`mode-badge ${selectedSession.mode}`}>{selectedSession.mode}</span>
-                </div>
-                <div className="session-datetime">
-                  {new Date(selectedSession.completedAt).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </div>
-              </div>
-
-              {/* Score Summary */}
-              <div className="score-summary">
-                <div className={`score-circle ${getScoreColor(selectedSession.score)}`}>
-                  <span className="score-value">{Math.round(selectedSession.score)}%</span>
-                  <span className="score-label">Score</span>
-                </div>
-                <div className="stats-grid">
-                  <div className="stat-item">
-                    <span className="stat-value correct">{selectedSession.correct}</span>
-                    <span className="stat-label">Correct</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value incorrect">{selectedSession.incorrect}</span>
-                    <span className="stat-label">Incorrect</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value">{selectedSession.total - selectedSession.attempted}</span>
-                    <span className="stat-label">Unanswered</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-value">{formatTime(selectedSession.timeTaken)}</span>
-                    <span className="stat-label">Time</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Interval Performance */}
-              {selectedSession.intervals && selectedSession.intervals.length > 0 && (
-                <div className="detail-section">
-                  <h4>Interval Performance</h4>
-                  <div className="intervals-table">
-                    <div className="table-header">
-                      <span>Interval</span>
-                      <span>Questions</span>
-                      <span>Correct</span>
-                      <span>Accuracy</span>
-                      <span>Avg Time</span>
-                    </div>
-                    {selectedSession.intervals.map((interval) => (
-                      <div key={interval.intervalNumber} className="table-row">
-                        <span>#{interval.intervalNumber}</span>
-                        <span>{interval.questionsAttempted}</span>
-                        <span className="correct">{interval.correct}</span>
-                        <span>
-                          {interval.questionsAttempted > 0
-                            ? Math.round((interval.correct / interval.questionsAttempted) * 100)
-                            : 0}%
-                        </span>
-                        <span>{interval.avgTimePerQuestion.toFixed(1)}s</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Question Responses */}
-              {selectedSession.responses && selectedSession.responses.length > 0 && (
-                <div className="detail-section">
-                  <h4>Question Details</h4>
-                  <div className="responses-list">
-                    {selectedSession.responses.map((response) => (
-                      <div
-                        key={response.questionNumber}
-                        className={`response-item ${
-                          response.isCorrect === null
-                            ? 'unanswered'
-                            : response.isCorrect
-                            ? 'correct'
-                            : 'incorrect'
-                        }`}
-                      >
-                        <span className="q-number">Q{response.questionNumber}</span>
-                        <span className="q-expression">{response.expression}</span>
-                        <span className="q-answer">
-                          {response.userAnswer !== null ? (
-                            <>
-                              <span className="user-answer">{response.userAnswer}</span>
-                              {!response.isCorrect && (
-                                <span className="correct-answer">({response.correctAnswer})</span>
-                              )}
-                            </>
-                          ) : (
-                            <span className="no-answer">-</span>
-                          )}
-                        </span>
-                        <span className="q-time">
-                          {response.timeSpent !== null ? `${response.timeSpent}s` : '-'}
-                        </span>
-                        <span className="q-status">
-                          {response.isCorrect === null ? '?' : response.isCorrect ? '✓' : '✗'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <TeacherPaperAnalysis
+            session={selectedSession}
+            student={student}
+            onClose={() => {
+              setSelectedSession(null);
+              setClassStats(null);
+            }}
+            classStats={classStats ? {
+              averageScore: classStats.classAverageScore,
+              totalStudents: classStats.totalStudentsAttempted,
+              studentRank: classStats.studentRank,
+              averageTime: classStats.classAverageTime,
+            } : undefined}
+          />
         )}
       </div>
     </div>

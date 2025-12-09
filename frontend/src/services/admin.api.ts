@@ -287,3 +287,25 @@ export async function fetchStudentSessionDetail(
   );
   return handleResponse<SessionDetail>(response);
 }
+
+export interface ClassComparisonStats {
+  classAverageScore: number;
+  classAverageTime: number;
+  totalStudentsAttempted: number;
+  studentRank: number;
+  scoreDiff: number;
+  timeDiff: number;
+}
+
+export async function fetchClassComparisonStats(
+  studentId: string,
+  sessionId: string
+): Promise<ClassComparisonStats> {
+  const response = await fetch(
+    `${API_BASE}/admin/students/${studentId}/sessions/${sessionId}/class-comparison`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+  return handleResponse<ClassComparisonStats>(response);
+}

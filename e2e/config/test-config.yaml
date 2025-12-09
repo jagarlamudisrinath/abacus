@@ -25,9 +25,9 @@ session_config:
   # Practice sheets to use (cycle through these)
   # These should match actual practice sheet IDs in the database
   practice_sheets:
-    - "aa-2"
-    - "aa-3"
-    - "aa-7"
+    - "aa-level-2-model-paper2"
+    - "aa-level-2-model-paper3"
+    - "aa-level-2-model-paper-5"
 
 # Browser settings for Playwright tests
 browser_config:
