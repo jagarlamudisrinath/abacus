@@ -239,7 +239,7 @@ export default function TeacherPaperAnalysis({
               {/* Interval Performance */}
               {session.intervals && session.intervals.length > 0 && (
                 <div className="interval-breakdown">
-                  <h2>7-Minute Interval Breakdown</h2>
+                  <h2>Interval Breakdown</h2>
                   <table className="interval-table">
                     <thead>
                       <tr>

@@ -5,6 +5,7 @@ import './IntervalModal.css';
 interface IntervalModalProps {
   isOpen: boolean;
   intervalNumber: number;
+  intervalMinutes: number;
   currentStats: {
     attempted: number;
     correct: number;
@@ -25,6 +26,7 @@ interface IntervalModalProps {
 export default function IntervalModal({
   isOpen,
   intervalNumber,
+  intervalMinutes,
   currentStats,
   totalStats,
   previousIntervals,
@@ -57,13 +59,13 @@ export default function IntervalModal({
       <div className="interval-modal">
         <div className="interval-modal-header">
           <span className="pause-icon">⏸️</span>
-          <h2>7-Minute Checkpoint</h2>
+          <h2>{intervalMinutes}-Minute Checkpoint</h2>
           <p>Interval {intervalNumber} Complete</p>
         </div>
 
         <div className="interval-stats-section">
           <div className="stats-block current">
-            <h3>This Interval (7 min)</h3>
+            <h3>This Interval ({intervalMinutes} min)</h3>
             <div className="stats-grid">
               <div className="stat-item">
                 <span className="stat-value">{currentStats.attempted}</span>

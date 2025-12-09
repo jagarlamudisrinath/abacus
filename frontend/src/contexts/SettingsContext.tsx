@@ -10,6 +10,7 @@ const defaultSettings: UserSettings = {
   fontSize: 'default',
   theme: 'system',
   candidateName: '',
+  intervalMinutes: 7,
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);

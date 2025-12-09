@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useTest } from '../../contexts/TestContext';
+import { useAuth } from '../../contexts/AuthContext';
 import SettingsPanel from '../settings/SettingsPanel';
 import './Header.css';
 
@@ -12,6 +13,7 @@ interface HeaderProps {
 export default function Header({ onSave, onSaveAndClose }: HeaderProps) {
   const { settings } = useSettings();
   const { state } = useTest();
+  const { student } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
   const [savedTimeDisplay, setSavedTimeDisplay] = useState('Not saved');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -83,7 +85,7 @@ export default function Header({ onSave, onSaveAndClose }: HeaderProps) {
         </div>
         <div className="header-separator" />
         <div className="header-info">
-          <div className="candidate-name">{settings.candidateName || 'Guest'}</div>
+          <div className="candidate-name">{student?.name || 'Guest'}</div>
           <div className="test-info">
             <span className="test-name">{state.test?.name || 'Practice Test'}</span>
             <span className="info-divider">/</span>

@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useTest } from '../../contexts/TestContext';
+import { useSettings } from '../../contexts/SettingsContext';
 import QuestionDisplay from './QuestionDisplay';
 import ResponseInput from './ResponseInput';
 import QuestionNavigation from './QuestionNavigation';
@@ -23,6 +24,7 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
     goToQuestion,
     toggleBookmark,
   } = useTest();
+  const { settings } = useSettings();
 
   const [showValidationError, setShowValidationError] = useState(false);
   const [showIntervalModal, setShowIntervalModal] = useState(false);
@@ -154,6 +156,7 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
           time={state.elapsedTime}
           isPaused={state.isPaused}
           onIntervalReached={handleIntervalReached}
+          intervalSeconds={settings.intervalMinutes * 60}
         />
       )}
 
@@ -238,6 +241,7 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
           <IntervalModal
             isOpen={showIntervalModal}
             intervalNumber={currentIntervalNumber}
+            intervalMinutes={settings.intervalMinutes}
             currentStats={{
               attempted: currentAttempted,
               correct: currentCorrect,

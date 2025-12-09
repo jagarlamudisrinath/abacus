@@ -226,7 +226,7 @@ export default function SessionDetailModal({ sessionId, onClose, onDelete }: Ses
             {/* Interval Performance */}
             {session.intervals && session.intervals.length > 0 && (
               <div className="section">
-                <h4>7-Minute Session Breakdown ({session.intervals.length} intervals)</h4>
+                <h4>Interval Breakdown ({session.intervals.length} intervals)</h4>
                 <div className="intervals-cards">
                   {session.intervals.map((interval) => {
                     const accuracy = interval.questionsAttempted > 0

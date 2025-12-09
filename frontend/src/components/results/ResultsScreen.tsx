@@ -109,10 +109,10 @@ export default function ResultsScreen({ result, onRetry, onHome, onReview }: Res
           ))}
         </div>
 
-        {/* 7-Minute Interval Breakdown */}
+        {/* Interval Breakdown */}
         {result.intervals && result.intervals.length > 0 && (
           <div className="interval-breakdown">
-            <h2>7-Minute Interval Breakdown</h2>
+            <h2>Interval Breakdown</h2>
             <table className="interval-results-table">
               <thead>
                 <tr>

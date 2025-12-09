@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSettings } from '../../contexts/SettingsContext';
 import { TestMode, PracticeSheet } from '../../types';
 import { getPracticeSheets } from '../../services/api';
 import './WelcomeScreen.css';
@@ -25,6 +26,7 @@ const FALLBACK_SHEETS: PracticeSheet[] = [
 
 export default function WelcomeScreen({ onStartTest, onShowDashboard, onLogout, onManageSheets }: WelcomeScreenProps) {
   const { student, isTeacher } = useAuth();
+  const { settings, updateSettings } = useSettings();
   const [selectedMode, setSelectedMode] = useState<TestMode>('practice');
   const [selectedSheet, setSelectedSheet] = useState('aa-2');
   const [practiceSheets, setPracticeSheets] = useState<PracticeSheet[]>(FALLBACK_SHEETS);
@@ -104,6 +106,28 @@ export default function WelcomeScreen({ onStartTest, onShowDashboard, onLogout, 
               </button>
             </div>
           </div>
+
+          {selectedMode === 'practice' && (
+            <div className="form-group">
+              <label>Check-in Interval</label>
+              <div className="interval-input-wrapper">
+                <input
+                  type="number"
+                  className="interval-input"
+                  value={settings.intervalMinutes}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    if (!isNaN(value) && value >= 1) {
+                      updateSettings({ intervalMinutes: value });
+                    }
+                  }}
+                  min={1}
+                  max={60}
+                />
+                <span className="interval-unit">minutes</span>
+              </div>
+            </div>
+          )}
 
           <div className="form-group">
             <label>Select Practice Sheet</label>

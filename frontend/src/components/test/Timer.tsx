@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useTest } from '../../contexts/TestContext';
 import './Timer.css';
 
-const INTERVAL_SECONDS = 420; // 7 minutes
+const DEFAULT_INTERVAL_SECONDS = 420; // 7 minutes
 
 interface TimerProps {
   mode: 'countdown' | 'countup';
@@ -10,9 +10,10 @@ interface TimerProps {
   onTimeUp?: () => void;
   isPaused?: boolean;
   onIntervalReached?: (intervalNumber: number) => void;
+  intervalSeconds?: number;
 }
 
-export default function Timer({ mode, time, onTimeUp, isPaused = false, onIntervalReached }: TimerProps) {
+export default function Timer({ mode, time, onTimeUp, isPaused = false, onIntervalReached, intervalSeconds = DEFAULT_INTERVAL_SECONDS }: TimerProps) {
   const { dispatch } = useTest();
   const lastIntervalRef = useRef(0);
 
@@ -38,16 +39,16 @@ export default function Timer({ mode, time, onTimeUp, isPaused = false, onInterv
     }
   }, [mode, time, dispatch, onTimeUp, isPaused]);
 
-  // Check for 7-minute interval in a separate effect
+  // Check for interval in a separate effect (uses customizable interval duration)
   useEffect(() => {
     if (mode === 'countup' && !isPaused && time > 0) {
-      const currentInterval = Math.floor(time / INTERVAL_SECONDS);
+      const currentInterval = Math.floor(time / intervalSeconds);
       if (currentInterval > lastIntervalRef.current) {
         lastIntervalRef.current = currentInterval;
         onIntervalReached?.(currentInterval);
       }
     }
-  }, [mode, time, isPaused, onIntervalReached]);
+  }, [mode, time, isPaused, onIntervalReached, intervalSeconds]);
 
   // Reset interval tracking when test restarts
   useEffect(() => {

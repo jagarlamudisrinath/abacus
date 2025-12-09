@@ -52,7 +52,7 @@ export default function IntervalAnalysis({ data }: IntervalAnalysisProps) {
         </BarChart>
       </ResponsiveContainer>
       <p className="interval-tip">
-        Each interval is 7 minutes. Watch for accuracy drops in later intervals.
+        Review your performance across check-in intervals. Watch for accuracy drops in later intervals.
       </p>
     </div>
   );

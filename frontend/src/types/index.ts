@@ -54,6 +54,7 @@ export interface UserSettings {
   fontSize: 'small' | 'default' | 'large';
   theme: 'light' | 'dark' | 'system';
   candidateName: string;
+  intervalMinutes: number;
 }
 
 export interface TestResult {
