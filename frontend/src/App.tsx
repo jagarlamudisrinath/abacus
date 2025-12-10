@@ -136,6 +136,23 @@ function AppContent() {
       const finalDuration = state.elapsedTime - state.currentIntervalStart;
 
       if (finalAttempted > 0) {
+        // Collect ALL wrong question IDs from responses
+        const allWrongQuestionIds: string[] = [];
+        Object.entries(state.responses).forEach(([questionId, response]) => {
+          if (response.isCorrect === false) {
+            allWrongQuestionIds.push(questionId);
+          }
+        });
+
+        // Get IDs already saved in previous intervals
+        const previouslyCollectedIds = new Set<string>();
+        state.intervals.forEach(interval => {
+          interval.wrongQuestionIds?.forEach(id => previouslyCollectedIds.add(id));
+        });
+
+        // Filter to only get NEW wrong question IDs (not in previous intervals)
+        const finalWrongIds = allWrongQuestionIds.filter(id => !previouslyCollectedIds.has(id));
+
         allIntervals.push({
           intervalNumber: state.intervals.length + 1,
           startTime: state.currentIntervalStart,
@@ -144,6 +161,7 @@ function AppContent() {
           correct: finalCorrect,
           incorrect: finalIncorrect,
           avgTimePerQuestion: finalDuration / finalAttempted,
+          wrongQuestionIds: finalWrongIds,
         });
       }
     }

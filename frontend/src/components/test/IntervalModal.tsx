@@ -21,6 +21,7 @@ interface IntervalModalProps {
   };
   previousIntervals: IntervalStats[];
   onResume: () => void;
+  onReviewInterval?: (intervalNumber: number) => void;
 }
 
 export default function IntervalModal({
@@ -31,6 +32,7 @@ export default function IntervalModal({
   totalStats,
   previousIntervals,
   onResume,
+  onReviewInterval,
 }: IntervalModalProps) {
   if (!isOpen) return null;
 
@@ -117,6 +119,18 @@ export default function IntervalModal({
           </div>
         </div>
 
+        {/* Review button for current interval when there are wrong answers */}
+        {onReviewInterval && currentStats.incorrect > 0 && (
+          <div className="current-interval-review">
+            <button
+              className="review-current-btn"
+              onClick={() => onReviewInterval(intervalNumber)}
+            >
+              📝 Review Wrong Answers ({currentStats.incorrect})
+            </button>
+          </div>
+        )}
+
         {allIntervals.length > 1 && (
           <div className="interval-history">
             <h3>All Intervals</h3>
@@ -129,6 +143,7 @@ export default function IntervalModal({
                   <th>Wrong</th>
                   <th>Accuracy</th>
                   <th>Avg/Sum</th>
+                  {onReviewInterval && <th>Review</th>}
                 </tr>
               </thead>
               <tbody>
@@ -136,6 +151,7 @@ export default function IntervalModal({
                   const acc = interval.questionsAttempted > 0
                     ? Math.round((interval.correct / interval.questionsAttempted) * 100)
                     : 0;
+                  const hasWrongAnswers = interval.incorrect > 0 && interval.wrongQuestionIds && interval.wrongQuestionIds.length > 0;
                   return (
                     <tr key={idx} className={idx === allIntervals.length - 1 ? 'current-row' : ''}>
                       <td>{interval.intervalNumber}</td>
@@ -144,6 +160,20 @@ export default function IntervalModal({
                       <td className="incorrect">{interval.incorrect}</td>
                       <td>{acc}%</td>
                       <td>{formatTime(interval.avgTimePerQuestion)}</td>
+                      {onReviewInterval && (
+                        <td>
+                          {hasWrongAnswers ? (
+                            <button
+                              className="review-interval-btn"
+                              onClick={() => onReviewInterval(interval.intervalNumber)}
+                            >
+                              Review ({interval.incorrect})
+                            </button>
+                          ) : (
+                            <span className="no-wrong">-</span>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

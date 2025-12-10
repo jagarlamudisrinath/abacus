@@ -6,6 +6,7 @@ import ResponseInput from './ResponseInput';
 import QuestionNavigation from './QuestionNavigation';
 import Timer from './Timer';
 import IntervalModal from './IntervalModal';
+import IntervalReviewModal from './IntervalReviewModal';
 import './TestInterface.css';
 
 interface TestInterfaceProps {
@@ -29,6 +30,7 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
   const [showValidationError, setShowValidationError] = useState(false);
   const [showIntervalModal, setShowIntervalModal] = useState(false);
   const [currentIntervalNumber, setCurrentIntervalNumber] = useState(0);
+  const [reviewingInterval, setReviewingInterval] = useState<number | null>(null);
 
   // Calculate current stats from responses
   const calculateStats = useCallback(() => {
@@ -51,6 +53,23 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
     const intervalDuration = state.elapsedTime - state.currentIntervalStart;
     const avgTime = currentAttempted > 0 ? intervalDuration / currentAttempted : 0;
 
+    // Collect ALL wrong question IDs from responses
+    const allWrongQuestionIds: string[] = [];
+    Object.entries(state.responses).forEach(([questionId, response]) => {
+      if (response.isCorrect === false) {
+        allWrongQuestionIds.push(questionId);
+      }
+    });
+
+    // Get IDs already saved in previous intervals
+    const previouslyCollectedIds = new Set<string>();
+    state.intervals.forEach(interval => {
+      interval.wrongQuestionIds?.forEach(id => previouslyCollectedIds.add(id));
+    });
+
+    // Filter to only get NEW wrong question IDs (not in previous intervals)
+    const intervalWrongIds = allWrongQuestionIds.filter(id => !previouslyCollectedIds.has(id));
+
     // Save interval stats
     dispatch({
       type: 'SAVE_INTERVAL',
@@ -62,6 +81,7 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
         correct: currentCorrect,
         incorrect: currentIncorrect,
         avgTimePerQuestion: avgTime,
+        wrongQuestionIds: intervalWrongIds,
       }
     });
 
@@ -69,7 +89,7 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
     dispatch({ type: 'PAUSE_TEST' });
     setCurrentIntervalNumber(intervalNumber);
     setShowIntervalModal(true);
-  }, [calculateStats, state.questionsAtIntervalStart, state.correctAtIntervalStart, state.incorrectAtIntervalStart, state.currentIntervalStart, state.elapsedTime, dispatch]);
+  }, [calculateStats, state.questionsAtIntervalStart, state.correctAtIntervalStart, state.incorrectAtIntervalStart, state.currentIntervalStart, state.elapsedTime, state.responses, dispatch]);
 
   // Handle resume from interval modal
   const handleResume = useCallback(() => {
@@ -88,6 +108,16 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
     dispatch({ type: 'RESUME_TEST' });
     setShowIntervalModal(false);
   }, [calculateStats, dispatch]);
+
+  // Handle review for a specific interval
+  const handleReviewInterval = useCallback((intervalNumber: number) => {
+    setReviewingInterval(intervalNumber);
+  }, []);
+
+  // Close interval review modal
+  const handleCloseIntervalReview = useCallback(() => {
+    setReviewingInterval(null);
+  }, []);
 
   const current = currentQuestion();
 
@@ -257,9 +287,18 @@ export default function TestInterface({ onComplete }: TestInterfaceProps) {
             }}
             previousIntervals={state.intervals}
             onResume={handleResume}
+            onReviewInterval={handleReviewInterval}
           />
         );
       })()}
+
+      {/* Interval Review Modal */}
+      <IntervalReviewModal
+        isOpen={reviewingInterval !== null}
+        intervalNumber={reviewingInterval || 0}
+        interval={reviewingInterval ? state.intervals.find(i => i.intervalNumber === reviewingInterval) || null : null}
+        onClose={handleCloseIntervalReview}
+      />
     </div>
   );
 }

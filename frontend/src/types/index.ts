@@ -89,6 +89,7 @@ export interface IntervalStats {
   correct: number;
   incorrect: number;
   avgTimePerQuestion: number;
+  wrongQuestionIds: string[];  // Array of question IDs answered incorrectly in this interval
 }
 
 // Test State for Context

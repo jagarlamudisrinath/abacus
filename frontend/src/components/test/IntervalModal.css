@@ -196,6 +196,52 @@
   font-weight: var(--font-semibold);
 }
 
+.review-interval-btn {
+  background-color: var(--warning);
+  color: white;
+  border: none;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.review-interval-btn:hover {
+  background-color: var(--warning-dark, #d97706);
+}
+
+.no-wrong {
+  color: var(--text-tertiary);
+}
+
+.current-interval-review {
+  padding: 0 var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+
+.review-current-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background-color: var(--warning);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-md);
+  font-weight: var(--font-semibold);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.review-current-btn:hover {
+  background-color: var(--warning-dark, #d97706);
+}
+
 .resume-btn {
   display: flex;
   align-items: center;
