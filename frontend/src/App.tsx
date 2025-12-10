@@ -50,9 +50,8 @@ function AppContent() {
     if (!state.test) return;
 
     try {
-      const timeTaken = state.startTime
-        ? Math.floor((Date.now() - state.startTime.getTime()) / 1000)
-        : 0;
+      // Use elapsedTime which is the actual test duration tracked by the timer
+      const timeTaken = state.elapsedTime;
 
       // Calculate intervals BEFORE submitting so we can send them to backend
       const localResult = calculateLocalResults();
@@ -70,7 +69,7 @@ function AppContent() {
       setResult(localResult);
       setScreen('results');
     }
-  }, [state.test, state.responses, state.startTime, state.intervals, state.elapsedTime, state.questionsAtIntervalStart, state.correctAtIntervalStart, state.incorrectAtIntervalStart, state.currentIntervalStart]);
+  }, [state.test, state.responses, state.intervals, state.elapsedTime, state.questionsAtIntervalStart, state.correctAtIntervalStart, state.incorrectAtIntervalStart, state.currentIntervalStart]);
 
   const calculateLocalResults = (): TestResult => {
     if (!state.test) {
@@ -119,9 +118,8 @@ function AppContent() {
       };
     });
 
-    const timeTaken = state.startTime
-      ? Math.floor((Date.now() - state.startTime.getTime()) / 1000)
-      : 0;
+    // Use elapsedTime which is the actual test duration tracked by the timer
+    const timeTaken = state.elapsedTime;
 
     // Include any final interval that may not have been saved (time remaining after last 7-min checkpoint)
     const allIntervals = [...state.intervals];
@@ -188,9 +186,8 @@ function AppContent() {
     }
 
     try {
-      const timeTaken = state.startTime
-        ? Math.floor((Date.now() - state.startTime.getTime()) / 1000)
-        : 0;
+      // Use elapsedTime which is the actual test duration tracked by the timer
+      const timeTaken = state.elapsedTime;
 
       // Calculate and send intervals when saving and closing
       const localResult = calculateLocalResults();
@@ -202,7 +199,7 @@ function AppContent() {
     }
 
     setScreen('welcome');
-  }, [state.test, state.responses, state.startTime, state.intervals, state.elapsedTime, state.questionsAtIntervalStart, state.correctAtIntervalStart, state.incorrectAtIntervalStart, state.currentIntervalStart]);
+  }, [state.test, state.responses, state.intervals, state.elapsedTime, state.questionsAtIntervalStart, state.correctAtIntervalStart, state.incorrectAtIntervalStart, state.currentIntervalStart]);
 
   const handleRetry = useCallback(() => {
     handleStartTest(lastMode, lastPracticeSheetId);
