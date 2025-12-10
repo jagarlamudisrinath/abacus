@@ -8,15 +8,15 @@ import TestInterface from './components/test/TestInterface';
 import ResultsScreen from './components/results/ResultsScreen';
 import ReviewScreen from './components/review/ReviewScreen';
 import LoginScreen from './components/auth/LoginScreen';
+import ChangePasswordScreen from './components/auth/ChangePasswordScreen';
 import Dashboard from './components/dashboard/Dashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 import SuperuserDashboard from './components/admin/SuperuserDashboard';
-import TeacherLogin from './components/admin/TeacherLogin';
 import { TestMode, TestResult } from './types';
 import { generateTest, submitTest, saveProgress } from './services/api';
 import './styles/globals.css';
 
-type AppScreen = 'login' | 'welcome' | 'test' | 'results' | 'review' | 'dashboard' | 'admin';
+type AppScreen = 'login' | 'welcome' | 'test' | 'results' | 'review' | 'dashboard' | 'admin' | 'change-password';
 type ReviewFilter = 'wrong' | 'unanswered';
 
 function AppContent() {
@@ -26,7 +26,7 @@ function AppContent() {
   const [lastPracticeSheetId, setLastPracticeSheetId] = useState('aa-2');
   const [reviewFilter, setReviewFilter] = useState<ReviewFilter>('wrong');
   const { state, dispatch } = useTest();
-  const { isAuthenticated, isTeacher, isSuperuser, isLoading, logout } = useAuth();
+  const { isAuthenticated, isTeacher, isSuperuser, isLoading, logout, student } = useAuth();
 
   const handleStartTest = useCallback(
     async (mode: TestMode, practiceSheetId: string) => {
@@ -223,6 +223,15 @@ function AppContent() {
   }, []);
 
   const handleLoginSuccess = useCallback(() => {
+    // If user needs to change password, redirect to change-password screen
+    if (student?.mustChangePassword) {
+      setScreen('change-password');
+    } else {
+      setScreen('welcome');
+    }
+  }, [student?.mustChangePassword]);
+
+  const handlePasswordChanged = useCallback(() => {
     setScreen('welcome');
   }, []);
 
@@ -248,20 +257,12 @@ function AppContent() {
     setScreen('login');
   }, [logout]);
 
-  const handleTeacherLoginSuccess = useCallback(() => {
-    // After teacher logs in, stay on admin screen (will show AdminDashboard)
-  }, []);
-
-  // Admin screen handling
+  // Admin screen handling - only accessible to teachers and superusers
   if (screen === 'admin') {
-    // If not authenticated as teacher or superuser, show TeacherLogin
+    // Redirect to login if not authenticated as teacher or superuser
     if (!isTeacher && !isSuperuser) {
-      return (
-        <TeacherLogin
-          onLoginSuccess={handleTeacherLoginSuccess}
-          onBack={() => setScreen('login')}
-        />
-      );
+      setScreen('login');
+      return null;
     }
     // Superuser sees SuperuserDashboard
     if (isSuperuser) {
@@ -282,16 +283,25 @@ function AppContent() {
 
   // Redirect to login if not authenticated
   if (!isAuthenticated && screen !== 'login') {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} onShowAdmin={handleShowAdmin} />;
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
   }
 
   if (screen === 'login') {
     if (isAuthenticated) {
-      // Already logged in, go to welcome
-      setScreen('welcome');
+      // Already logged in - check if password change required
+      if (student?.mustChangePassword) {
+        setScreen('change-password');
+      } else {
+        setScreen('welcome');
+      }
       return null;
     }
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} onShowAdmin={handleShowAdmin} />;
+    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  // Force password change screen - must be shown before any other screen
+  if (screen === 'change-password' || (isAuthenticated && student?.mustChangePassword)) {
+    return <ChangePasswordScreen onPasswordChanged={handlePasswordChanged} />;
   }
 
   if (screen === 'dashboard') {
@@ -309,7 +319,7 @@ function AppContent() {
         onStartTest={handleStartTest}
         onShowDashboard={handleShowDashboard}
         onLogout={handleLogout}
-        onManageSheets={isTeacher ? handleShowAdmin : undefined}
+        onManageSheets={(isTeacher || isSuperuser) ? handleShowAdmin : undefined}
       />
     );
   }

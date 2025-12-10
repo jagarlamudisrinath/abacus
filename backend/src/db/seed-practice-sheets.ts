@@ -20,7 +20,6 @@ async function seedPracticeSheets() {
           CREATE TABLE IF NOT EXISTS practice_sheets (
             id VARCHAR(50) PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
-            form_url VARCHAR(500),
             created_at TIMESTAMP DEFAULT NOW(),
             updated_at TIMESTAMP DEFAULT NOW()
           )
@@ -57,10 +56,10 @@ async function seedPracticeSheets() {
 
         // Insert practice sheet
         await client.query(
-          `INSERT INTO practice_sheets (id, name, form_url)
-           VALUES ($1, $2, $3)
+          `INSERT INTO practice_sheets (id, name)
+           VALUES ($1, $2)
            ON CONFLICT (id) DO NOTHING`,
-          [sheet.id, sheet.name, sheet.formUrl]
+          [sheet.id, sheet.name]
         );
 
         // Insert questions

@@ -1,7 +1,6 @@
 export interface PracticeSheet {
   id: string;
   name: string;
-  formUrl: string;
   questions: { expression: string; answer: number }[];
 }
 

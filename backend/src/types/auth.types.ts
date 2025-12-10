@@ -12,6 +12,7 @@ export interface Student {
   grade: string | null;
   role: UserRole;
   teacherId: string | null;
+  mustChangePassword: boolean;
   createdAt: Date;
   lastLoginAt: Date | null;
   settings: Record<string, any>;

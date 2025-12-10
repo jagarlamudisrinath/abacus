@@ -16,7 +16,6 @@ function getAuthHeaders(): HeadersInit {
 export interface PracticeSheetSummary {
   id: string;
   name: string;
-  formUrl: string | null;
   questionCount: number;
   createdAt: string;
   updatedAt: string;
@@ -31,7 +30,6 @@ export interface Question {
 export interface PracticeSheetDetail {
   id: string;
   name: string;
-  formUrl: string | null;
   createdAt: string;
   updatedAt: string;
   questions: Question[];
@@ -54,6 +52,7 @@ export interface StudentSummary {
   teacherId: string | null;
   createdAt: string;
   lastLoginAt: string | null;
+  hasPassword?: boolean;
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -85,7 +84,6 @@ export async function fetchPracticeSheet(id: string): Promise<PracticeSheetDetai
 export async function createPracticeSheet(data: {
   id?: string;
   name: string;
-  formUrl?: string;
   questions?: Array<{ expression: string; answer: number }>;
 }): Promise<PracticeSheetDetail> {
   const response = await fetch(`${API_BASE}/admin/practice-sheets`, {
@@ -98,8 +96,8 @@ export async function createPracticeSheet(data: {
 
 export async function updatePracticeSheet(
   id: string,
-  data: { name: string; formUrl?: string }
-): Promise<{ id: string; name: string; formUrl: string | null; updatedAt: string }> {
+  data: { name: string }
+): Promise<{ id: string; name: string; updatedAt: string }> {
   const response = await fetch(`${API_BASE}/admin/practice-sheets/${id}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
@@ -246,6 +244,19 @@ export async function deleteStudent(id: string): Promise<{ success: boolean }> {
   const response = await fetch(`${API_BASE}/admin/students/${id}`, {
     method: 'DELETE',
     headers: getAuthHeaders(),
+  });
+  return handleResponse(response);
+}
+
+export async function setStudentPassword(
+  studentId: string,
+  password: string,
+  forcePasswordChange: boolean = true
+): Promise<{ success: boolean }> {
+  const response = await fetch(`${API_BASE}/admin/students/${studentId}/set-password`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ password, forcePasswordChange }),
   });
   return handleResponse(response);
 }

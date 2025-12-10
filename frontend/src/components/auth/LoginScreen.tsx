@@ -4,12 +4,12 @@ import './LoginScreen.css';
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
-  onShowAdmin?: () => void;
 }
 
-export default function LoginScreen({ onLoginSuccess, onShowAdmin }: LoginScreenProps) {
+export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
   const { login } = useAuth();
   const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,7 +19,7 @@ export default function LoginScreen({ onLoginSuccess, onShowAdmin }: LoginScreen
     setIsLoading(true);
 
     try {
-      await login(identifier);
+      await login(identifier, password);
       onLoginSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
@@ -30,7 +30,6 @@ export default function LoginScreen({ onLoginSuccess, onShowAdmin }: LoginScreen
   };
 
   const isEmail = identifier.includes('@');
-  const placeholderText = 'Enter email or student ID';
 
   return (
     <div className="login-screen">
@@ -38,7 +37,7 @@ export default function LoginScreen({ onLoginSuccess, onShowAdmin }: LoginScreen
         <div className="login-header">
           <div className="login-logo">ALAMA</div>
           <h1>Welcome Back!</h1>
-          <p>Sign in to track your progress</p>
+          <p>Sign in to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
@@ -51,9 +50,21 @@ export default function LoginScreen({ onLoginSuccess, onShowAdmin }: LoginScreen
               type="text"
               value={identifier}
               onChange={(e) => setIdentifier(e.target.value)}
-              placeholder={placeholderText}
+              placeholder="Enter email or student ID"
               required
               autoFocus
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
             />
           </div>
 
@@ -65,18 +76,8 @@ export default function LoginScreen({ onLoginSuccess, onShowAdmin }: LoginScreen
         </form>
 
         <p className="login-note">
-          Don't have an account? Contact your teacher to create one.
+          Students: Contact your teacher to get your password.
         </p>
-
-        {onShowAdmin && (
-          <button
-            type="button"
-            className="admin-link"
-            onClick={onShowAdmin}
-          >
-            Admin Panel
-          </button>
-        )}
       </div>
     </div>
   );

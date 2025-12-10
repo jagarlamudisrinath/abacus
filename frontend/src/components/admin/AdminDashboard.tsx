@@ -166,16 +166,6 @@ export default function AdminDashboard({ onBack, onStartPractice }: AdminDashboa
                       <span className="stat-label">Updated</span>
                       <span className="stat-value">{formatDate(sheet.updatedAt)}</span>
                     </div>
-                    {sheet.formUrl && (
-                      <a
-                        href={sheet.formUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="form-link"
-                      >
-                        View Form
-                      </a>
-                    )}
                   </div>
                   <div className="sheet-card-actions">
                     <button

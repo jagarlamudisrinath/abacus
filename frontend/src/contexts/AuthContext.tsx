@@ -10,6 +10,7 @@ export interface Student {
   name: string;
   role: UserRole;
   teacherId: string | null;
+  mustChangePassword: boolean;
   createdAt: Date;
   lastLoginAt: Date | null;
 }
@@ -21,9 +22,8 @@ interface AuthContextType {
   isSuperuser: boolean;
   isAdmin: boolean; // true for both teacher and superuser
   isLoading: boolean;
-  login: (identifier: string) => Promise<void>;
-  teacherLogin: (email: string, password: string) => Promise<void>;
-  teacherRegister: (email: string, password: string, name: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
+  changePassword: (newPassword: string) => Promise<void>;
   logout: () => void;
   token: string | null;
 }
@@ -79,13 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = useCallback(async (identifier: string): Promise<void> => {
+  const login = useCallback(async (identifier: string, password: string): Promise<void> => {
     const response = await fetch(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ identifier }),
+      body: JSON.stringify({ identifier, password }),
     });
 
     if (!response.ok) {
@@ -99,45 +99,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStudent(data.student);
   }, []);
 
-  const teacherLogin = useCallback(async (email: string, password: string): Promise<void> => {
-    const response = await fetch(`${API_BASE}/auth/teacher/login`, {
+  const changePassword = useCallback(async (newPassword: string): Promise<void> => {
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${API_BASE}/auth/change-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ newPassword }),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.error || 'Login failed');
+      throw new Error(error.error || 'Failed to change password');
     }
 
-    const data = await response.json();
-    localStorage.setItem('authToken', data.token);
-    setToken(data.token);
-    setStudent(data.student);
-  }, []);
-
-  const teacherRegister = useCallback(async (email: string, password: string, name: string): Promise<void> => {
-    const response = await fetch(`${API_BASE}/auth/teacher/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, name }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Registration failed');
+    // After successful password change, update local student state to clear mustChangePassword
+    if (student) {
+      setStudent({ ...student, mustChangePassword: false });
     }
-
-    const data = await response.json();
-    localStorage.setItem('authToken', data.token);
-    setToken(data.token);
-    setStudent(data.student);
-  }, []);
+  }, [token, student]);
 
   const logout = useCallback(() => {
     localStorage.removeItem('authToken');
@@ -155,8 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: student?.role === 'teacher' || student?.role === 'superuser',
         isLoading,
         login,
-        teacherLogin,
-        teacherRegister,
+        changePassword,
         logout,
         token,
       }}

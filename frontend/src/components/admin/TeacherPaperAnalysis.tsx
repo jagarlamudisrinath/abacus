@@ -179,12 +179,12 @@ export default function TeacherPaperAnalysis({
                 {/* Stats Grid */}
                 <div className="stats-grid">
                   <div className="stat-card">
-                    <span className="stat-icon correct">&#10003;</span>
+                    <span className="stat-icon correct">✓</span>
                     <span className="stat-number">{session.correct}</span>
                     <span className="stat-name">Correct</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-icon incorrect">&#10007;</span>
+                    <span className="stat-icon incorrect">✗</span>
                     <span className="stat-number">{session.incorrect}</span>
                     <span className="stat-name">Incorrect</span>
                   </div>
@@ -194,17 +194,17 @@ export default function TeacherPaperAnalysis({
                     <span className="stat-name">Unanswered</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-icon time">&#9201;</span>
+                    <span className="stat-icon time">⏱</span>
                     <span className="stat-number">{formatTime(session.timeTaken)}</span>
                     <span className="stat-name">Time Taken</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-icon total">&#128221;</span>
+                    <span className="stat-icon total">📝</span>
                     <span className="stat-number">{session.attempted}/{session.total}</span>
                     <span className="stat-name">Completed</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-icon avg">&#9889;</span>
+                    <span className="stat-icon avg">⚡</span>
                     <span className="stat-number">{formatAvgTime(avgTimePerQuestion)}</span>
                     <span className="stat-name">Avg per Sum</span>
                   </div>
@@ -343,8 +343,8 @@ export default function TeacherPaperAnalysis({
                           {currentQuestion.userAnswer !== null ? currentQuestion.userAnswer : '-'}
                           <span className="answer-icon">
                             {currentQuestion.isCorrect === null && '-'}
-                            {currentQuestion.isCorrect === true && '&#10003;'}
-                            {currentQuestion.isCorrect === false && '&#10007;'}
+                            {currentQuestion.isCorrect === true && '✓'}
+                            {currentQuestion.isCorrect === false && '✗'}
                           </span>
                         </span>
                       </div>
@@ -353,7 +353,7 @@ export default function TeacherPaperAnalysis({
                         <span className="answer-label">Correct Answer</span>
                         <span className="answer-value">
                           {currentQuestion.correctAnswer}
-                          <span className="answer-icon">&#10003;</span>
+                          <span className="answer-icon">✓</span>
                         </span>
                       </div>
                     </div>
@@ -422,8 +422,8 @@ export default function TeacherPaperAnalysis({
                           </span>
                           <span className="q-status">
                             {q.isCorrect === null && '?'}
-                            {q.isCorrect === true && '&#10003;'}
-                            {q.isCorrect === false && '&#10007;'}
+                            {q.isCorrect === true && '✓'}
+                            {q.isCorrect === false && '✗'}
                           </span>
                         </div>
                       ))}
@@ -500,7 +500,7 @@ export default function TeacherPaperAnalysis({
                 </div>
               ) : (
                 <div className="insights-placeholder">
-                  <div className="placeholder-icon">&#128202;</div>
+                  <div className="placeholder-icon">📊</div>
                   <p>Class comparison data is being calculated.</p>
                   <p className="subtext">
                     Once more students complete this practice sheet, you'll see comparative insights here.
@@ -562,9 +562,9 @@ export default function TeacherPaperAnalysis({
                             <span className="pattern-value">{Math.round(secondHalfAccuracy)}%</span>
                           </div>
                           <div className={`pattern-trend ${trend}`}>
-                            {trend === 'improving' && 'Performance improved as the test progressed &#128200;'}
-                            {trend === 'declining' && 'Performance declined as the test progressed &#128201;'}
-                            {trend === 'consistent' && 'Performance remained consistent throughout &#10004;'}
+                            {trend === 'improving' && 'Performance improved as the test progressed 📈'}
+                            {trend === 'declining' && 'Performance declined as the test progressed 📉'}
+                            {trend === 'consistent' && 'Performance remained consistent throughout ✔'}
                           </div>
                         </>
                       );

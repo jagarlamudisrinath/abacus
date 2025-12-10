@@ -7,6 +7,52 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret-change-in-producti
 const JWT_EXPIRES_IN = '30d';
 const SALT_ROUNDS = 10;
 
+// Unified login for all users (students, teachers, superusers)
+export async function login(identifier: string, password: string): Promise<LoginResponse> {
+  // Find user by email or student ID
+  const result = await studentRepo.findByIdentifierWithPassword(identifier);
+
+  if (!result) {
+    throw new Error('Invalid credentials');
+  }
+
+  const { student, passwordHash } = result;
+
+  // Check if password is set
+  if (!passwordHash) {
+    throw new Error('Password not set. Please contact your teacher to set your password.');
+  }
+
+  // Verify password
+  const isValid = await bcrypt.compare(password, passwordHash);
+  if (!isValid) {
+    throw new Error('Invalid credentials');
+  }
+
+  // Update last login timestamp
+  await studentRepo.updateLastLogin(student.id);
+
+  // Generate JWT token with role
+  const token = generateToken(student.id, student.role);
+
+  return {
+    token,
+    student,
+    isNewUser: false,
+  };
+}
+
+// Set or update password for a student (called by teachers)
+// When a teacher sets/resets a password, mustChangePassword is set to true
+export async function setStudentPassword(studentId: string, password: string, mustChangePassword: boolean = true): Promise<boolean> {
+  if (password.length < 6) {
+    throw new Error('Password must be at least 6 characters');
+  }
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  return studentRepo.setPasswordHash(studentId, passwordHash, mustChangePassword);
+}
+
+// Legacy function - kept for backward compatibility during migration
 export async function loginOrRegister(request: LoginRequest): Promise<LoginResponse> {
   const { identifier } = request;
 
@@ -14,7 +60,6 @@ export async function loginOrRegister(request: LoginRequest): Promise<LoginRespo
   const student = await studentRepo.findByIdentifier(identifier);
 
   if (!student) {
-    // Student self-signup is disabled - students can only be created by teachers or admins
     throw new Error('Account not found. Please contact your teacher or administrator to create an account.');
   }
 

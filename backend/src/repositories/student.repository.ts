@@ -12,6 +12,7 @@ interface StudentRow {
   role: UserRole;
   teacher_id: string | null;
   password_hash: string | null;
+  must_change_password: boolean;
   created_at: Date;
   last_login_at: Date | null;
   settings: Record<string, any>;
@@ -28,6 +29,7 @@ function mapRowToStudent(row: StudentRow): Student {
     grade: row.grade,
     role: row.role || 'student',
     teacherId: row.teacher_id,
+    mustChangePassword: row.must_change_password || false,
     createdAt: row.created_at,
     lastLoginAt: row.last_login_at,
     settings: row.settings || {},
@@ -70,6 +72,45 @@ export async function findById(id: string): Promise<Student | null> {
 export async function findByIdentifier(identifier: string): Promise<Student | null> {
   const isEmail = identifier.includes('@');
   return isEmail ? findByEmail(identifier) : findByStudentId(identifier);
+}
+
+export async function findByIdentifierWithPassword(identifier: string): Promise<{ student: Student; passwordHash: string | null } | null> {
+  const isEmail = identifier.includes('@');
+  const result = await query<StudentRow>(
+    isEmail
+      ? 'SELECT * FROM students WHERE email = $1'
+      : 'SELECT * FROM students WHERE student_id = $1',
+    [isEmail ? identifier.toLowerCase() : identifier]
+  );
+  if (!result.rows[0]) return null;
+  return {
+    student: mapRowToStudent(result.rows[0]),
+    passwordHash: result.rows[0].password_hash,
+  };
+}
+
+export async function setPasswordHash(studentId: string, passwordHash: string, mustChangePassword: boolean = false): Promise<boolean> {
+  const result = await query(
+    'UPDATE students SET password_hash = $2, must_change_password = $3 WHERE id = $1',
+    [studentId, passwordHash, mustChangePassword]
+  );
+  return result.rowCount !== null && result.rowCount > 0;
+}
+
+export async function setMustChangePassword(studentId: string, mustChangePassword: boolean): Promise<boolean> {
+  const result = await query(
+    'UPDATE students SET must_change_password = $2 WHERE id = $1',
+    [studentId, mustChangePassword]
+  );
+  return result.rowCount !== null && result.rowCount > 0;
+}
+
+export async function hasPassword(studentId: string): Promise<boolean> {
+  const result = await query<{ password_hash: string | null }>(
+    'SELECT password_hash FROM students WHERE id = $1',
+    [studentId]
+  );
+  return result.rows[0]?.password_hash !== null;
 }
 
 export async function createWithEmail(email: string, name: string): Promise<Student> {
@@ -185,12 +226,12 @@ export async function updateStudent(
 
 // Teacher-specific functions
 
-export async function createTeacher(email: string, name: string, passwordHash: string): Promise<Student> {
+export async function createTeacher(email: string, name: string, passwordHash: string, mustChangePassword: boolean = true): Promise<Student> {
   const result = await query<StudentRow>(
-    `INSERT INTO students (email, name, role, password_hash)
-     VALUES ($1, $2, 'teacher', $3)
+    `INSERT INTO students (email, name, role, password_hash, must_change_password)
+     VALUES ($1, $2, 'teacher', $3, $4)
      RETURNING *`,
-    [email.toLowerCase(), name, passwordHash]
+    [email.toLowerCase(), name, passwordHash, mustChangePassword]
   );
   return mapRowToStudent(result.rows[0]);
 }
@@ -207,12 +248,15 @@ export async function findTeacherByEmail(email: string): Promise<{ student: Stud
   };
 }
 
-export async function findStudentsByTeacherId(teacherId: string): Promise<Student[]> {
+export async function findStudentsByTeacherId(teacherId: string): Promise<Array<Student & { hasPassword: boolean }>> {
   const result = await query<StudentRow>(
     `SELECT * FROM students WHERE teacher_id = $1 ORDER BY name`,
     [teacherId]
   );
-  return result.rows.map(mapRowToStudent);
+  return result.rows.map(row => ({
+    ...mapRowToStudent(row),
+    hasPassword: row.password_hash !== null,
+  }));
 }
 
 export async function createStudentForTeacher(
@@ -284,7 +328,7 @@ export async function findAllTeachers(): Promise<Array<Student & { studentCount:
   }));
 }
 
-export async function findAllStudentsGlobal(): Promise<Array<Student & { teacherName: string | null }>> {
+export async function findAllStudentsGlobal(): Promise<Array<Student & { teacherName: string | null; hasPassword: boolean }>> {
   const result = await query<StudentRow & { teacher_name: string | null }>(
     `SELECT s.*, t.name as teacher_name
      FROM students s
@@ -296,6 +340,7 @@ export async function findAllStudentsGlobal(): Promise<Array<Student & { teacher
   return result.rows.map(row => ({
     ...mapRowToStudent(row),
     teacherName: row.teacher_name,
+    hasPassword: row.password_hash !== null,
   }));
 }
 

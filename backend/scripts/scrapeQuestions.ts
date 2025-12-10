@@ -112,7 +112,6 @@ async function main() {
   const practiceSheets: {
     id: string;
     name: string;
-    formUrl: string;
     questions: { expression: string; answer: number }[];
   }[] = [];
 
@@ -142,7 +141,6 @@ async function main() {
       practiceSheets.push({
         id: form.id,
         name: form.name,
-        formUrl: form.url,
         questions
       });
       console.error(`  Successfully processed ${questions.length} questions`);
@@ -151,7 +149,6 @@ async function main() {
       practiceSheets.push({
         id: form.id,
         name: form.name,
-        formUrl: form.url,
         questions: []
       });
     }
@@ -161,7 +158,6 @@ async function main() {
   const output = `export interface PracticeSheet {
   id: string;
   name: string;
-  formUrl: string;
   questions: { expression: string; answer: number }[];
 }
 

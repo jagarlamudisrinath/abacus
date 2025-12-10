@@ -25,7 +25,7 @@ const FALLBACK_SHEETS: PracticeSheet[] = [
 ];
 
 export default function WelcomeScreen({ onStartTest, onShowDashboard, onLogout, onManageSheets }: WelcomeScreenProps) {
-  const { student, isTeacher } = useAuth();
+  const { student, isTeacher, isSuperuser } = useAuth();
   const { settings, updateSettings } = useSettings();
   const [selectedMode, setSelectedMode] = useState<TestMode>('practice');
   const [selectedSheet, setSelectedSheet] = useState('aa-2');
@@ -67,9 +67,9 @@ export default function WelcomeScreen({ onStartTest, onShowDashboard, onLogout, 
           <div className="header-top">
             <div className="logo-large">ALAMA</div>
             <div className="header-actions">
-              {isTeacher && onManageSheets && (
+              {(isTeacher || isSuperuser) && onManageSheets && (
                 <button className="btn btn-secondary header-btn" onClick={onManageSheets}>
-                  Manage Sheets
+                  {isSuperuser ? 'Admin Dashboard' : 'Manage Sheets'}
                 </button>
               )}
               <button className="btn btn-secondary header-btn" onClick={onShowDashboard}>

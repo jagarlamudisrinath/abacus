@@ -4,6 +4,7 @@ import {
   createStudent,
   updateStudent,
   deleteStudent,
+  setStudentPassword,
   StudentSummary,
 } from '../../services/admin.api';
 import StudentActivityModal from './StudentActivityModal';
@@ -17,6 +18,12 @@ export default function StudentManagement() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [viewingActivityStudent, setViewingActivityStudent] = useState<StudentSummary | null>(null);
+  const [passwordStudent, setPasswordStudent] = useState<StudentSummary | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [forcePasswordChange, setForcePasswordChange] = useState(true);
 
   // Form state for adding new students
   const [newFirstName, setNewFirstName] = useState('');
@@ -97,6 +104,49 @@ export default function StudentManagement() {
       setError('Failed to delete student');
       console.error(err);
     }
+  };
+
+  const handleSetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwordStudent) return;
+
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    if (newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    try {
+      await setStudentPassword(passwordStudent.id, newPassword, forcePasswordChange);
+      setPasswordSuccess(true);
+      setNewPassword('');
+      setConfirmPassword('');
+      // Close modal after short delay to show success
+      setTimeout(() => {
+        setPasswordStudent(null);
+        setPasswordSuccess(false);
+        loadStudents();
+      }, 1500);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to set password';
+      setPasswordError(message);
+    }
+  };
+
+  const openPasswordModal = (student: StudentSummary) => {
+    setPasswordStudent(student);
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordError(null);
+    setPasswordSuccess(false);
+    setForcePasswordChange(true);
   };
 
   const startEdit = (student: StudentSummary) => {
@@ -304,6 +354,13 @@ export default function StudentManagement() {
                         </button>
                         <button
                           className="btn btn-sm btn-secondary"
+                          onClick={() => openPasswordModal(student)}
+                          title={student.hasPassword ? 'Reset Password' : 'Set Password'}
+                        >
+                          {student.hasPassword ? 'Reset Pwd' : 'Set Pwd'}
+                        </button>
+                        <button
+                          className="btn btn-sm btn-secondary"
                           onClick={() => startEdit(student)}
                         >
                           Edit
@@ -329,6 +386,66 @@ export default function StudentManagement() {
           student={viewingActivityStudent}
           onClose={() => setViewingActivityStudent(null)}
         />
+      )}
+
+      {passwordStudent && (
+        <div className="modal-overlay" onClick={() => setPasswordStudent(null)}>
+          <div className="modal-content password-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{passwordStudent.hasPassword ? 'Reset' : 'Set'} Password for {passwordStudent.name}</h3>
+              <button className="close-btn" onClick={() => setPasswordStudent(null)}>
+                &times;
+              </button>
+            </div>
+            <form onSubmit={handleSetPassword} className="password-form">
+              <div className="form-group">
+                <label htmlFor="newPassword">New Password</label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
+                  required
+                  minLength={6}
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="confirmPassword">Confirm Password</label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm password"
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="form-group checkbox-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={forcePasswordChange}
+                    onChange={(e) => setForcePasswordChange(e.target.checked)}
+                  />
+                  <span>Require password change on next login</span>
+                </label>
+              </div>
+              {passwordError && <div className="error-message">{passwordError}</div>}
+              {passwordSuccess && <div className="success-message">Password set successfully!</div>}
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={() => setPasswordStudent(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={passwordSuccess}>
+                  {passwordStudent.hasPassword ? 'Reset' : 'Set'} Password
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import * as practiceSheetRepo from '../repositories/practiceSheet.repository';
 import * as studentRepo from '../repositories/student.repository';
 import * as progressService from '../services/progress.service';
+import * as authService from '../services/auth.service';
 import { requireTeacher } from '../middleware/requireTeacher.middleware';
 import { AuthenticatedRequest } from '../types/auth.types';
 import { scrapeGoogleForm } from '../utils/googleFormsScraper';
@@ -76,11 +77,14 @@ function generateId(name: string): string {
 
 /**
  * GET /api/admin/practice-sheets
- * List all practice sheets from database
+ * List practice sheets - teachers only see their own sheets
  */
-router.get('/practice-sheets', async (_req: Request, res: Response) => {
+router.get('/practice-sheets', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const sheets = await practiceSheetRepo.findAll();
+    const user = req.student!;
+
+    // Teachers only see their own sheets
+    const sheets = await practiceSheetRepo.findByCreator(user.id);
     res.json(sheets);
   } catch (error) {
     console.error('Error fetching practice sheets:', error);
@@ -90,11 +94,20 @@ router.get('/practice-sheets', async (_req: Request, res: Response) => {
 
 /**
  * GET /api/admin/practice-sheets/:id
- * Get a single practice sheet with all questions
+ * Get a single practice sheet with all questions (must be owner)
  */
-router.get('/practice-sheets/:id', async (req: Request, res: Response) => {
+router.get('/practice-sheets/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const user = req.student!;
     const { id } = req.params;
+
+    // Verify ownership
+    const isOwner = await practiceSheetRepo.belongsTo(id, user.id);
+    if (!isOwner) {
+      res.status(404).json({ error: 'Practice sheet not found' });
+      return;
+    }
+
     const sheet = await practiceSheetRepo.findById(id);
 
     if (!sheet) {
@@ -111,12 +124,20 @@ router.get('/practice-sheets/:id', async (req: Request, res: Response) => {
 
 /**
  * GET /api/admin/practice-sheets/:id/export
- * Export practice sheet questions as CSV or TSV
+ * Export practice sheet questions as CSV or TSV (must be owner)
  */
-router.get('/practice-sheets/:id/export', async (req: Request, res: Response) => {
+router.get('/practice-sheets/:id/export', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const user = req.student!;
     const { id } = req.params;
     const format = (req.query.format as string) || 'csv';
+
+    // Verify ownership
+    const isOwner = await practiceSheetRepo.belongsTo(id, user.id);
+    if (!isOwner) {
+      res.status(404).json({ error: 'Practice sheet not found' });
+      return;
+    }
 
     const sheet = await practiceSheetRepo.findById(id);
 
@@ -146,9 +167,10 @@ router.get('/practice-sheets/:id/export', async (req: Request, res: Response) =>
  * POST /api/admin/practice-sheets
  * Create a new practice sheet
  */
-router.post('/practice-sheets', async (req: Request, res: Response) => {
+router.post('/practice-sheets', async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { id, name, formUrl, questions } = req.body;
+    const user = req.student!;
+    const { id, name, questions } = req.body;
 
     if (!name) {
       res.status(400).json({ error: 'Name is required' });
@@ -165,11 +187,12 @@ router.post('/practice-sheets', async (req: Request, res: Response) => {
       return;
     }
 
+    // Set created_by to the authenticated user (teacher)
     const sheet = await practiceSheetRepo.create(
       sheetId,
       name,
-      formUrl || null,
-      questions || []
+      questions || [],
+      user.id
     );
 
     res.status(201).json(sheet);
@@ -181,19 +204,27 @@ router.post('/practice-sheets', async (req: Request, res: Response) => {
 
 /**
  * PUT /api/admin/practice-sheets/:id
- * Update practice sheet metadata
+ * Update practice sheet metadata (must be owner)
  */
-router.put('/practice-sheets/:id', async (req: Request, res: Response) => {
+router.put('/practice-sheets/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const user = req.student!;
     const { id } = req.params;
-    const { name, formUrl } = req.body;
+    const { name } = req.body;
 
     if (!name) {
       res.status(400).json({ error: 'Name is required' });
       return;
     }
 
-    const updated = await practiceSheetRepo.update(id, name, formUrl || null);
+    // Verify ownership
+    const isOwner = await practiceSheetRepo.belongsTo(id, user.id);
+    if (!isOwner) {
+      res.status(404).json({ error: 'Practice sheet not found' });
+      return;
+    }
+
+    const updated = await practiceSheetRepo.update(id, name);
 
     if (!updated) {
       res.status(404).json({ error: 'Practice sheet not found' });
@@ -203,7 +234,6 @@ router.put('/practice-sheets/:id', async (req: Request, res: Response) => {
     res.json({
       id: updated.id,
       name: updated.name,
-      formUrl: updated.form_url,
       updatedAt: updated.updated_at,
     });
   } catch (error) {
@@ -214,11 +244,20 @@ router.put('/practice-sheets/:id', async (req: Request, res: Response) => {
 
 /**
  * DELETE /api/admin/practice-sheets/:id
- * Delete a practice sheet
+ * Delete a practice sheet (must be owner)
  */
-router.delete('/practice-sheets/:id', async (req: Request, res: Response) => {
+router.delete('/practice-sheets/:id', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const user = req.student!;
     const { id } = req.params;
+
+    // Verify ownership
+    const isOwner = await practiceSheetRepo.belongsTo(id, user.id);
+    if (!isOwner) {
+      res.status(404).json({ error: 'Practice sheet not found' });
+      return;
+    }
+
     const deleted = await practiceSheetRepo.deleteSheet(id);
 
     if (!deleted) {
@@ -235,16 +274,17 @@ router.delete('/practice-sheets/:id', async (req: Request, res: Response) => {
 
 /**
  * POST /api/admin/practice-sheets/:id/questions
- * Add questions to a practice sheet (single or bulk)
+ * Add questions to a practice sheet (single or bulk) - must be owner
  */
-router.post('/practice-sheets/:id/questions', async (req: Request, res: Response) => {
+router.post('/practice-sheets/:id/questions', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const user = req.student!;
     const { id } = req.params;
     const { questions, bulkText, replace } = req.body;
 
-    // Check if sheet exists
-    const exists = await practiceSheetRepo.exists(id);
-    if (!exists) {
+    // Verify ownership
+    const isOwner = await practiceSheetRepo.belongsTo(id, user.id);
+    if (!isOwner) {
       res.status(404).json({ error: 'Practice sheet not found' });
       return;
     }
@@ -281,12 +321,20 @@ router.post('/practice-sheets/:id/questions', async (req: Request, res: Response
 
 /**
  * PUT /api/admin/practice-sheets/:id/questions/:questionNumber
- * Update a single question
+ * Update a single question (must be owner)
  */
-router.put('/practice-sheets/:id/questions/:questionNumber', async (req: Request, res: Response) => {
+router.put('/practice-sheets/:id/questions/:questionNumber', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const user = req.student!;
     const { id, questionNumber } = req.params;
     const { expression, answer } = req.body;
+
+    // Verify ownership
+    const isOwner = await practiceSheetRepo.belongsTo(id, user.id);
+    if (!isOwner) {
+      res.status(404).json({ error: 'Practice sheet not found' });
+      return;
+    }
 
     if (!expression || answer === undefined) {
       res.status(400).json({ error: 'Expression and answer are required' });
@@ -314,11 +362,19 @@ router.put('/practice-sheets/:id/questions/:questionNumber', async (req: Request
 
 /**
  * DELETE /api/admin/practice-sheets/:id/questions/:questionNumber
- * Delete a single question
+ * Delete a single question (must be owner)
  */
-router.delete('/practice-sheets/:id/questions/:questionNumber', async (req: Request, res: Response) => {
+router.delete('/practice-sheets/:id/questions/:questionNumber', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const user = req.student!;
     const { id, questionNumber } = req.params;
+
+    // Verify ownership
+    const isOwner = await practiceSheetRepo.belongsTo(id, user.id);
+    if (!isOwner) {
+      res.status(404).json({ error: 'Practice sheet not found' });
+      return;
+    }
 
     const deleted = await practiceSheetRepo.deleteQuestion(id, parseInt(questionNumber));
 
@@ -497,6 +553,51 @@ router.delete('/students/:id', async (req: AuthenticatedRequest, res: Response) 
   } catch (error) {
     console.error('Error deleting student:', error);
     res.status(500).json({ error: 'Failed to delete student' });
+  }
+});
+
+/**
+ * POST /api/admin/students/:id/set-password
+ * Set or update a student's password (teacher action)
+ * Body: { password }
+ */
+router.post('/students/:id/set-password', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { password, forcePasswordChange = true } = req.body;
+    const teacher = req.student!;
+
+    if (!password) {
+      res.status(400).json({ error: 'Password is required' });
+      return;
+    }
+
+    // Verify student exists and belongs to teacher (or teacher is superuser)
+    const student = await studentRepo.findById(id);
+    if (!student) {
+      res.status(404).json({ error: 'Student not found' });
+      return;
+    }
+
+    // Only allow setting password for actual students (not teachers/superusers)
+    if (student.role !== 'student') {
+      res.status(400).json({ error: 'Can only set password for students' });
+      return;
+    }
+
+    // Teachers can only set password for their own students
+    if (teacher.role !== 'superuser' && student.teacherId !== teacher.id) {
+      res.status(403).json({ error: 'Access denied: Student does not belong to this teacher' });
+      return;
+    }
+
+    await authService.setStudentPassword(id, password, forcePasswordChange);
+
+    res.json({ success: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to set password';
+    console.error('Error setting student password:', error);
+    res.status(400).json({ error: message });
   }
 });
 
