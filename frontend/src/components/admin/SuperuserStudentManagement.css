@@ -1,0 +1,361 @@
+.superuser-student-management {
+  padding: 20px;
+}
+
+.student-management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.student-management-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.student-count {
+  background: #e9ecef;
+  color: #666;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
+
+.superuser-student-management .error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.superuser-student-management .error-message button {
+  background: none;
+  border: none;
+  color: #721c24;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.superuser-student-management .loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.superuser-student-management .empty-state {
+  text-align: center;
+  padding: 40px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #666;
+}
+
+.students-table {
+  overflow-x: auto;
+}
+
+.students-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.students-table th,
+.students-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.students-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #555;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.students-table td {
+  color: #333;
+}
+
+.students-table td.identifier {
+  font-family: monospace;
+  color: #666;
+}
+
+.students-table td.student-name {
+  font-weight: 500;
+  color: #1a1a2e;
+}
+
+.students-table td.email {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.students-table td.teacher-cell {
+  min-width: 150px;
+}
+
+.students-table td.teacher-cell .teacher-name {
+  font-weight: 500;
+  color: #333;
+}
+
+.students-table td.teacher-cell .unassigned {
+  color: #999;
+  font-style: italic;
+}
+
+.students-table td.date {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.students-table td.actions {
+  white-space: nowrap;
+}
+
+.students-table .delete-confirm-text {
+  color: #dc3545;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.btn-sm {
+  padding: 4px 12px;
+  font-size: 0.85rem;
+}
+
+.btn-primary {
+  background: #667eea;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #5a6fd6;
+}
+
+.btn-secondary {
+  background: #e9ecef;
+  color: #333;
+  margin-left: 8px;
+}
+
+.btn-secondary:hover {
+  background: #dee2e6;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  margin-left: 8px;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.btn-assign {
+  background: #28a745;
+  color: white;
+  margin-left: 8px;
+}
+
+.btn-assign:hover {
+  background: #218838;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+/* Password form styles */
+.password-form {
+  padding: 20px;
+}
+
+.password-form .form-group {
+  margin-bottom: 16px;
+}
+
+.password-form .form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #555;
+}
+
+.password-form .form-group input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.password-form .form-group input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.success-message {
+  padding: 12px 20px;
+  background: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 8px;
+  color: #155724;
+  margin-bottom: 16px;
+}
+
+/* Checkbox styles */
+.checkbox-group {
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: normal;
+  color: #333;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.checkbox-label span {
+  font-size: 0.9rem;
+}
+
+/* Assign teacher modal styles */
+.assign-form {
+  padding: 20px;
+}
+
+.assign-form .form-group {
+  margin-bottom: 16px;
+}
+
+.assign-form .form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #555;
+}
+
+.teacher-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: white;
+  cursor: pointer;
+}
+
+.teacher-select:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.current-assignment {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+.current-assignment .label {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.current-assignment .value {
+  font-weight: 500;
+  color: #333;
+  font-size: 0.9rem;
+}

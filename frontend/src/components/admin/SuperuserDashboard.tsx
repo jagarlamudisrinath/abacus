@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import TeacherManagement from './TeacherManagement';
-import StudentManagement from './StudentManagement';
+import SuperuserStudentManagement from './SuperuserStudentManagement';
 import SuperuserPracticeSheets from './SuperuserPracticeSheets';
 import './SuperuserDashboard.css';
 
@@ -53,7 +53,7 @@ export default function SuperuserDashboard({ onLogout }: SuperuserDashboardProps
 
       <main className="dashboard-content">
         {activeTab === 'teachers' && <TeacherManagement />}
-        {activeTab === 'students' && <StudentManagement />}
+        {activeTab === 'students' && <SuperuserStudentManagement />}
         {activeTab === 'sheets' && <SuperuserPracticeSheets />}
       </main>
     </div>
