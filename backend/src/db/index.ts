@@ -1,10 +1,20 @@
 import { Pool, PoolClient, QueryResult, QueryResultRow } from 'pg';
 
+// Supabase provides two connection strings:
+// 1. DATABASE_URL - Pooled connection (Transaction mode) - Use this for app queries
+// 2. DIRECT_DATABASE_URL - Direct connection - Use for migrations/admin tasks
+//
+// For Supabase, keep max connections low since Supabase Pooler handles connection pooling
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgresql://alama:alama123@localhost:5432/alama_abacus',
-  max: 20,
+  max: 10, // Lower max for Supabase pooled connections (they handle pooling)
+  min: 2,  // Keep some connections warm
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 5000, // Longer timeout for Supabase
+  // SSL required for Supabase (automatically handled by connection string)
+  ssl: process.env.DATABASE_URL?.includes('supabase')
+    ? { rejectUnauthorized: false }
+    : undefined,
 });
 
 // Test connection on startup
