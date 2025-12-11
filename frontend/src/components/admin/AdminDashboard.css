@@ -48,7 +48,8 @@
 
 .admin-header .teacher-name {
   font-size: 0.9rem;
-  color: #666;
+  color: #333;
+  font-weight: 500;
   padding-left: 16px;
   border-left: 1px solid #ddd;
 }
@@ -205,12 +206,13 @@
 .sheet-card-header h3 {
   margin: 0 0 4px;
   font-size: 1.1rem;
-  color: #333;
+  color: #1a1a2e;
+  font-weight: 600;
 }
 
 .sheet-id {
   font-size: 0.8rem;
-  color: #999;
+  color: #666;
   font-family: monospace;
 }
 

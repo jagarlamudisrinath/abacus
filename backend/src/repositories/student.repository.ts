@@ -249,8 +249,9 @@ export async function findTeacherByEmail(email: string): Promise<{ student: Stud
 }
 
 export async function findStudentsByTeacherId(teacherId: string): Promise<Array<Student & { hasPassword: boolean }>> {
+  // Return teacher's own students AND unassigned students (created by admin)
   const result = await query<StudentRow>(
-    `SELECT * FROM students WHERE teacher_id = $1 ORDER BY name`,
+    `SELECT * FROM students WHERE role = 'student' AND (teacher_id = $1 OR teacher_id IS NULL) ORDER BY name`,
     [teacherId]
   );
   return result.rows.map(row => ({
