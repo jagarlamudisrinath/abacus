@@ -77,6 +77,10 @@
   letter-spacing: 0.5px;
 }
 
+.teachers-table td {
+  color: #333;
+}
+
 .teachers-table td.email {
   font-family: monospace;
   font-size: 0.9rem;
